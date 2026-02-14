@@ -1,0 +1,106 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-secondary;
+  }
+  
+  body {
+    @apply bg-primary text-white font-sans antialiased;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-primary-light;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-secondary rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-secondary-light;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-accent hover:bg-accent-hover text-white font-semibold py-2 px-6 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-primary;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary hover:bg-secondary-light text-white font-semibold py-2 px-6 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2 focus:ring-offset-primary;
+  }
+
+  .card {
+    @apply bg-primary-light rounded-lg overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-xl;
+  }
+
+  .input-field {
+    @apply bg-secondary text-white border border-secondary-light rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent;
+  }
+
+  /* TV Navigation Focus Styles */
+  .tv-focusable:focus {
+    @apply ring-4 ring-accent scale-105 outline-none;
+    transition: all 0.2s ease-in-out;
+  }
+
+  /* Video Player Styles */
+  .video-js {
+    width: 100%;
+    height: 100%;
+  }
+
+  .video-js .vjs-big-play-button {
+    @apply bg-accent border-accent;
+    font-size: 4em;
+    border-radius: 50%;
+    width: 2em;
+    height: 2em;
+    line-height: 2em;
+    margin-top: -1em;
+    margin-left: -1em;
+  }
+
+  .video-js .vjs-control-bar {
+    @apply bg-gradient-to-t from-black/90 to-transparent;
+    height: 5em;
+  }
+
+  .video-js .vjs-play-progress {
+    @apply bg-accent;
+  }
+
+  .video-js .vjs-volume-level {
+    @apply bg-accent;
+  }
+}
+
+/* Loading Animation */
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.loading-skeleton {
+  animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  @apply bg-secondary-light;
+}
