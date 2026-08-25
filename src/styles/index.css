@@ -147,6 +147,24 @@
   border-radius: var(--radius-card);
 }
 
+/* ===== Focus TV (D-pad / telecomando) =====
+   Anello luminoso + scale-up sull'elemento navigato, stile Android TV.
+   Uso :focus (non :focus-visible): i WebView TV non impostano sempre
+   focus-visible sul focus programmatico del D-pad. */
+.tv-focusable:focus {
+  outline: none;
+  transform: scale(1.06);
+  z-index: 5;
+  position: relative;
+  box-shadow:
+    0 0 0 3px #fff,
+    0 0 0 6px var(--c-accent),
+    0 12px 32px -4px rgba(0,0,0,.7);
+}
+.tv-focusable {
+  transition: transform .18s cubic-bezier(.2,.8,.2,1), box-shadow .18s ease;
+}
+
 /* Animazioni (indipendenti dal tema) */
 @keyframes shimmer { 0% {background-position:-400px 0} 100% {background-position:400px 0} }
 @keyframes page-in { from{opacity:0;transform:translateY(14px) scale(.99)} to{opacity:1;transform:none} }
