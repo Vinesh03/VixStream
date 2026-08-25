@@ -108,7 +108,7 @@ const Details = () => {
                 alt={title}
                 className="w-48 rounded-lg shadow-2xl"
                 onError={(e) => {
-                  e.target.src = '/placeholder.png';
+                  e.target.src = '/placeholder.svg';
                 }}
               />
             </div>

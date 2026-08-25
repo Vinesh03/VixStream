@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navigation/Navbar';
+import DisclaimerModal from './components/Common/DisclaimerModal';
 import Home from './pages/Home';
 import Movies from './pages/Movies';
 import TVShows from './pages/TVShows';
@@ -12,9 +13,17 @@ import Player from './pages/Player';
 import Settings from './pages/Settings';
 
 function App() {
+  // Disclaimer mostrato una sola volta (salvato in localStorage se "non mostrare più")
+  const [showDisclaimer, setShowDisclaimer] = useState(
+    () => localStorage.getItem('vixsrc_disclaimer_accepted') !== 'true'
+  );
+
   return (
-    <Router>
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="min-h-screen bg-primary">
+        {showDisclaimer && (
+          <DisclaimerModal onAccept={() => setShowDisclaimer(false)} />
+        )}
         <Routes>
           {/* Player route - full screen, no navbar */}
           <Route path="/player/:mediaType/:id" element={<Player />} />
@@ -35,6 +44,8 @@ function App() {
                   <Route path="/continue-watching" element={<ContinueWatching />} />
                   <Route path="/details/:mediaType/:id" element={<Details />} />
                   <Route path="/settings" element={<Settings />} />
+                  {/* Catch-all: qualsiasi URL sconosciuto torna alla home */}
+                  <Route path="*" element={<Home />} />
                 </Routes>
               </>
             }

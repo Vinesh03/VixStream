@@ -46,7 +46,7 @@ class TMDBService {
 
   // Get image URL
   getImageUrl(path, size = 'original') {
-    if (!path) return '/placeholder.png';
+    if (!path) return '/placeholder.svg';
     return `${IMAGE_BASE_URL}/${size}${path}`;
   }
 

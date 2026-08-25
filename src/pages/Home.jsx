@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { TrendingUp, Film, Tv, Star } from 'lucide-react';
+import { TrendingUp, Film, Tv, Star, Play } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import tmdbService from '../services/tmdb';
 import MediaGrid from '../components/MediaGrid/MediaGrid';
 import Loading from '../components/Common/Loading';
@@ -9,8 +10,8 @@ import useStore from '../store/useStore';
 const Home = () => {
   const [trendingMovies, setTrendingMovies] = useState([]);
   const [trendingTV, setTrendingTV] = useState([]);
-  const [popularMovies, setPopularMovies] = useState([]);
   const [topRatedMovies, setTopRatedMovies] = useState([]);
+  const [nowPlaying, setNowPlaying] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
@@ -25,17 +26,17 @@ const Home = () => {
       setLoading(true);
       setError(null);
 
-      const [trending, popular, topRated, trendingTvShows] = await Promise.all([
+      const [trending, topRated, onTheAir, nowPlayingMovies] = await Promise.all([
         tmdbService.getTrending('movie', 'week'),
-        tmdbService.getPopularMovies(),
         tmdbService.getTopRatedMovies(),
-        tmdbService.getTrending('tv', 'week')
+        tmdbService.getTrending('tv', 'week'),
+        tmdbService.fetchFromTMDB('/movie/now_playing')
       ]);
 
       setTrendingMovies(trending.results?.slice(0, 12) || []);
-      setPopularMovies(popular.results?.slice(0, 12) || []);
       setTopRatedMovies(topRated.results?.slice(0, 12) || []);
-      setTrendingTV(trendingTvShows.results?.slice(0, 12) || []);
+      setTrendingTV(onTheAir.results?.slice(0, 12) || []);
+      setNowPlaying(nowPlayingMovies.results?.slice(0, 12) || []);
     } catch (err) {
       console.error('Error loading content:', err);
       setError('Impossibile caricare i contenuti. Riprova più tardi.');
@@ -67,20 +68,27 @@ const Home = () => {
             <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/50 to-transparent" />
             
             <div className="relative container mx-auto px-4 h-full flex items-end pb-12">
-              <div className="max-w-2xl">
-                <h1 className="text-5xl font-bold text-white mb-4">
+              <div className="max-w-2xl w-full">
+                <h1 className="text-3xl md:text-5xl font-bold text-white mb-4 break-words">
                   Benvenuto su VixSrc
                 </h1>
-                <p className="text-xl text-gray-200 mb-6">
+                <p className="text-lg md:text-xl text-gray-200 mb-6">
                   Scopri migliaia di film e serie TV in streaming
                 </p>
+                <Link
+                  to={`/details/movie/${trendingMovies[0].id}`}
+                  className="btn-primary inline-flex items-center gap-2 text-lg px-6 py-3"
+                >
+                  <Play className="w-5 h-5" />
+                  {trendingMovies[0].title || trendingMovies[0].name}
+                </Link>
               </div>
             </div>
           </>
         )}
       </div>
 
-      <div className="container mx-auto px-4 space-y-12 -mt-24 relative z-10">
+      <div className="container mx-auto px-4 space-y-12 -mt-12 relative z-10 pb-24">
         {/* Continue Watching */}
         {continueWatching.length > 0 && (
           <section>
@@ -88,16 +96,18 @@ const Home = () => {
               <Film className="w-6 h-6 text-accent" />
               <h2 className="text-2xl font-bold text-white">Continua a guardare</h2>
             </div>
-            <MediaGrid 
-              items={continueWatching.map(item => ({
-                ...item,
-                id: item.id,
-                poster_path: item.poster_path,
-                title: item.title,
-                name: item.name
-              }))} 
-              mediaType="movie"
-            />
+            <MediaGrid items={continueWatching} mediaTypeOverride />
+          </section>
+        )}
+
+        {/* Now Playing */}
+        {nowPlaying.length > 0 && (
+          <section>
+            <div className="flex items-center gap-2 mb-6">
+              <Star className="w-6 h-6 text-accent" />
+              <h2 className="text-2xl font-bold text-white">Al cinema ora</h2>
+            </div>
+            <MediaGrid items={nowPlaying} mediaType="movie" />
           </section>
         )}
 
@@ -117,15 +127,6 @@ const Home = () => {
             <h2 className="text-2xl font-bold text-white">Serie TV di tendenza</h2>
           </div>
           <MediaGrid items={trendingTV} mediaType="tv" />
-        </section>
-
-        {/* Popular Movies */}
-        <section>
-          <div className="flex items-center gap-2 mb-6">
-            <Film className="w-6 h-6 text-accent" />
-            <h2 className="text-2xl font-bold text-white">Film popolari</h2>
-          </div>
-          <MediaGrid items={popularMovies} mediaType="movie" />
         </section>
 
         {/* Top Rated Movies */}

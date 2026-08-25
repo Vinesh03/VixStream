@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { X, Maximize2, Minimize2 } from 'lucide-react';
+import { X, Maximize2, Minimize2, ExternalLink, AlertTriangle } from 'lucide-react';
 import vixsrcService from '../../services/vixsrc';
 import useStore from '../../store/useStore';
 
@@ -17,6 +17,7 @@ const VideoPlayer = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [showExternalHint, setShowExternalHint] = useState(true);
   
   const { 
     addContinueWatching, 
@@ -26,19 +27,22 @@ const VideoPlayer = ({
   } = useStore();
 
   useEffect(() => {
+    let lastSaved = 0;
     // Setup player event listeners
     const cleanup = vixsrcService.setupPlayerEvents(iframeRef.current, {
       onTimeUpdate: (time, dur) => {
         setCurrentTime(time);
         setDuration(dur);
-        
-        // Update progress every 10 seconds
-        if (time % 10 < 0.5) {
+
+        // Salva il progresso ogni 10 secondi effettivi
+        if (dur > 0 && time - lastSaved >= 10) {
+          lastSaved = time;
           const progress = (time / dur) * 100;
           updateProgress(tmdbId, mediaType, progress, season, episode);
         }
       },
       onPlay: (time, dur) => {
+        setShowExternalHint(false);
         // Add to continue watching when playback starts
         addContinueWatching({
           id: tmdbId,
@@ -46,7 +50,7 @@ const VideoPlayer = ({
           season,
           episode,
           title,
-          progress: (time / dur) * 100,
+          progress: dur > 0 ? (time / dur) * 100 : 0,
           currentTime: time,
           duration: dur
         });
@@ -111,6 +115,17 @@ const VideoPlayer = ({
           </h2>
           
           <div className="flex items-center gap-2">
+            <a
+              href={streamUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 rounded-lg bg-black/50 hover:bg-black/70 transition-colors"
+              aria-label="Apri in nuova finestra"
+              title="Il player non funziona? Apri in una nuova finestra"
+            >
+              <ExternalLink className="w-6 h-6 text-white" />
+            </a>
+            
             <button
               onClick={toggleFullscreen}
               className="p-2 rounded-lg bg-black/50 hover:bg-black/70 transition-colors"
@@ -142,9 +157,32 @@ const VideoPlayer = ({
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
         title={`Player - ${title}`}
+        sandbox="allow-scripts allow-same-origin allow-presentation allow-forms allow-popups"
       />
 
-      {/* Progress Indicator (optional) */}
+      {/* Avviso contenuti esterni */}
+      {showExternalHint && (
+        <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-10 max-w-md mx-4">
+          <div className="bg-primary-light/95 border border-secondary rounded-xl p-4 flex items-start gap-3 shadow-2xl">
+            <AlertTriangle className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-gray-300 leading-relaxed">
+              Stai per accedere a contenuti forniti da{' '}
+              <strong className="text-white">VixSrc</strong>, servizio di terze parti non
+              gestito da noi. Se qualcosa non funziona, usa il pulsante{' '}
+              <ExternalLink className="w-3.5 h-3.5 inline" /> in alto per aprire il player
+              in una nuova finestra.
+              <button
+                onClick={() => setShowExternalHint(false)}
+                className="block mt-2 text-accent hover:text-accent-hover font-medium"
+              >
+                Ho capito
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Progress Indicator */}
       {duration > 0 && (
         <div className="absolute bottom-0 left-0 right-0 z-10 bg-gradient-to-t from-black/80 to-transparent p-4">
           <div className="max-w-4xl mx-auto">
@@ -155,7 +193,7 @@ const VideoPlayer = ({
             <div className="h-1 bg-gray-700 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-accent transition-all duration-300"
-                style={{ width: `${(currentTime / duration) * 100}%` }}
+                style={{ width: `${Math.min((currentTime / duration) * 100, 100)}%` }}
               />
             </div>
           </div>
@@ -167,6 +205,7 @@ const VideoPlayer = ({
 
 // Helper function to format time
 const formatTime = (seconds) => {
+  if (!seconds || !isFinite(seconds)) return '0:00';
   const hrs = Math.floor(seconds / 3600);
   const mins = Math.floor((seconds % 3600) / 60);
   const secs = Math.floor(seconds % 60);

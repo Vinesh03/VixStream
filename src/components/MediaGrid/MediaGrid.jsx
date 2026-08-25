@@ -5,6 +5,7 @@ import Loading from '../Common/Loading';
 const MediaGrid = ({ 
   items = [], 
   mediaType = 'movie',
+  mediaTypeOverride = false,
   loading = false,
   className = ''
 }) => {
@@ -26,7 +27,7 @@ const MediaGrid = ({
         <MediaCard
           key={`${item.id}-${index}`}
           item={item}
-          mediaType={mediaType}
+          mediaType={mediaTypeOverride ? (item.media_type || mediaType) : mediaType}
           autoFocus={index === 0}
         />
       ))}

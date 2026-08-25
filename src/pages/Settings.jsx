@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Settings as SettingsIcon, Key, Trash2, Save, RefreshCw, Heart } from 'lucide-react';
+import { Settings as SettingsIcon, Key, Trash2, Save, RefreshCw, Heart, Info } from 'lucide-react';
 import tmdbService from '../services/tmdb';
 import useStore from '../store/useStore';
 
@@ -192,6 +192,17 @@ const Settings = () => {
             >
               <Trash2 className="w-4 h-4" />
               Cancella tutti i dati (preferiti, cronologia, ecc.)
+            </button>
+
+            <button
+              onClick={() => {
+                localStorage.removeItem('vixsrc_disclaimer_accepted');
+                window.location.reload();
+              }}
+              className="btn-secondary flex items-center gap-2 w-full justify-center"
+            >
+              <Info className="w-4 h-4" />
+              Mostra di nuovo l'avvertenza all'avvio
             </button>
           </div>
         </section>

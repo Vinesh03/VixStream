@@ -64,7 +64,7 @@ const MediaCard = ({
           className="w-full h-full object-cover"
           loading="lazy"
           onError={(e) => {
-            e.target.src = '/placeholder.png';
+            e.target.src = '/placeholder.svg';
           }}
         />
         
@@ -99,7 +99,10 @@ const MediaCard = ({
       </div>
 
       <div className="p-3">
-        <h3 className="font-semibold text-white truncate mb-1">
+        <h3
+          className="font-semibold text-white line-clamp-2 leading-snug mb-1 min-h-[2.6em]"
+          title={title}
+        >
           {title}
         </h3>
         <p className="text-sm text-gray-400">
