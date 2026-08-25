@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import tmdbService from '../../services/tmdb';
 import useStore from '../../store/useStore';
 
-const MediaCard = ({ 
-  item, 
+const MediaCard = ({
+  item,
   mediaType,
   onFocus,
   autoFocus = false,
@@ -13,6 +13,7 @@ const MediaCard = ({
 }) => {
   const navigate = useNavigate();
   const cardRef = useRef(null);
+  const { continueWatching } = useStore();
   const { isFavorite, addFavorite, removeFavorite } = useStore();
   
   const title = item.title || item.name;
@@ -47,6 +48,17 @@ const MediaCard = ({
 
   const handlePlay = (e) => {
     e.stopPropagation();
+    // Serie TV: riprendi da stagione/episodio salvati, altrimenti S1E1.
+    // (l'URL del player richiede sempre /:season/:episode per le serie)
+    if (mediaType === 'tv') {
+      const saved = continueWatching.find(
+        (w) => String(w.id) === String(item.id) && w.media_type === 'tv'
+      );
+      const season = saved?.season != null ? saved.season : 1;
+      const episode = saved?.episode != null ? saved.episode : 1;
+      navigate(`/player/tv/${item.id}/${season}/${episode}`);
+      return;
+    }
     navigate(`/player/${mediaType}/${item.id}`);
   };
 
