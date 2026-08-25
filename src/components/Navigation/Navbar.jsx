@@ -32,7 +32,57 @@ const BottomTabBar = ({ pathname }) => {
   const isGlass = themeId === 'glass';
   const activeIndex = TAB_ITEMS.findIndex(t => t.path === pathname);
 
+  // Bolla elastica: allungamento a due fasi (stretch → collapse), stile Apple
+  const [bubble, setBubble] = useState({ index: Math.max(activeIndex, 0) });
+  const prevIndexRef = useRef(Math.max(activeIndex, 0));
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    if (activeIndex < 0 || activeIndex === prevIndexRef.current) return;
+    const from = prevIndexRef.current;
+    const to = activeIndex;
+    prevIndexRef.current = to;
+    clearTimeout(timerRef.current);
+
+    // Fase 1: la bolla si ALLUNGA da "from" ad abbracciare entrambe le posizioni
+    const left = Math.min(from, to);
+    const span = Math.abs(to - from);
+    setBubble({ index: from, stretchLeft: left, stretchSpan: span });
+    // Fase 2: si RITIRA sulla voce di destinazione
+    timerRef.current = setTimeout(() => {
+      setBubble({ index: to, stretchLeft: to, stretchSpan: span });
+    }, 140);
+    return () => clearTimeout(timerRef.current);
+  }, [activeIndex]);
+
+  const TAB_W = 64;
+
   if (isGlass) {
+    // geometria bolla: o normale, oppure in fase stretch
+    let bubbleStyle;
+    if (bubble.stretchSpan != null && bubble.stretchSpan > 0) {
+      const isStretching = bubble.index !== activeIndex;
+      const left = isStretching ? bubble.stretchLeft : activeIndex;
+      const w = isStretching ? TAB_W * (bubble.stretchSpan + 1) : TAB_W;
+      bubbleStyle = {
+        left: `${8 + left * TAB_W}px`,
+        width: `${w}px`,
+        transition: isStretching
+          ? 'left .13s cubic-bezier(.4,0,.6,1), width .13s cubic-bezier(.4,0,.6,1)'
+          : 'left .32s cubic-bezier(.34,1.25,.5,1), width .3s cubic-bezier(.34,1.25,.5,1)',
+        opacity: 1,
+        // leggero schiacciamento verticale durante lo stretch (effetto gomma)
+        transform: isStretching ? 'scaleY(.82)' : 'scaleY(1)',
+        transitionProperty: 'left, width, transform',
+      };
+    } else {
+      bubbleStyle = {
+        left: `${8 + bubble.index * TAB_W}px`,
+        width: `${TAB_W}px`,
+        opacity: 1,
+      };
+    }
+
     return (
       <nav
         className="fixed left-1/2 -translate-x-1/2 z-40 md:hidden animate-nav-float"
@@ -40,21 +90,18 @@ const BottomTabBar = ({ pathname }) => {
       >
         <div className="glass-panel border border-white/20 rounded-full shadow-2xl overflow-hidden">
           <div className="relative flex items-center px-2 py-1.5">
-            {/* Bolla scivolante con riflesso glossy (stile Apple) */}
+            {/* Bolla elastica glossy */}
             <span
               aria-hidden="true"
-              className="absolute top-1 bottom-1 w-16 rounded-full overflow-hidden"
+              className="absolute top-1 bottom-1 rounded-full overflow-hidden"
               style={{
-                left: '8px',
-                transform: `translateX(${Math.max(activeIndex, 0) * 64}px)`,
-                transition: 'transform .4s cubic-bezier(.34,1.3,.5,1)',
-                opacity: activeIndex >= 0 ? 1 : 0,
+                ...bubbleStyle,
                 background: 'linear-gradient(180deg, rgba(255,255,255,.28) 0%, rgba(255,255,255,.12) 45%, rgba(255,255,255,.04) 100%)',
                 border: '1px solid rgba(255,255,255,.22)',
                 boxShadow: 'inset 0 1px 1px rgba(255,255,255,.35), inset 0 -1px 2px rgba(0,0,0,.15), 0 2px 8px rgba(0,0,0,.25)',
               }}
             >
-              {/* Riflesso lucido in alto (highlight) */}
+              {/* Riflesso lucido in alto */}
               <span
                 className="absolute"
                 style={{
