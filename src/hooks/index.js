@@ -82,7 +82,7 @@ export const useDeviceType = () => {
   });
 
   useEffect(() => {
-    const onResize = () => setState(detect());
+    const onResize = () => setDeviceInfo(detect());
     window.addEventListener('resize', onResize);
     window.addEventListener('orientationchange', onResize);
     // doppia rilevazione: alcuni WebView emettono resize prima che il layout

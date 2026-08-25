@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Star, Play, Heart, Clock, ArrowLeft } from 'lucide-react';
+import { Star, Play, Heart, Clock, ArrowLeft, ListVideo } from 'lucide-react';
 import tmdbService from '../services/tmdb';
 import useStore from '../store/useStore';
 import Loading from '../components/Common/Loading';
@@ -13,15 +13,37 @@ const Details = () => {
   const [details, setDetails] = useState(null);
   const [seasons, setSeasons] = useState([]);
   const [selectedSeason, setSelectedSeason] = useState(null);
+  const [episodes, setEpisodes] = useState([]);
+  const [episodesLoading, setEpisodesLoading] = useState(false);
+  const [showEpisodes, setShowEpisodes] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
-  const { isFavorite, addFavorite, removeFavorite } = useStore();
+
+  const { isFavorite, addFavorite, removeFavorite, continueWatching } = useStore();
   const isFav = details ? isFavorite(details.id, mediaType) : false;
+
+  // Ultimo progresso per questa serie (per "riprendi da dove eri")
+  const watchEntry = continueWatching.find(
+    (w) => String(w.id) === String(id) && w.media_type === mediaType && w.media_type === 'tv'
+  );
 
   useEffect(() => {
     loadDetails();
   }, [id, mediaType]);
+
+  // Carica gli episodi quando cambia la stagione selezionata
+  useEffect(() => {
+    if (mediaType !== 'tv' || !selectedSeason) return;
+    let cancelled = false;
+    setEpisodesLoading(true);
+    tmdbService.getTVSeasonDetails(id, selectedSeason.season_number)
+      .then((data) => {
+        if (!cancelled) setEpisodes(data.episodes || []);
+      })
+      .catch(() => { if (!cancelled) setEpisodes([]); })
+      .finally(() => { if (!cancelled) setEpisodesLoading(false); });
+    return () => { cancelled = true; };
+  }, [id, mediaType, selectedSeason]);
 
   const loadDetails = async () => {
     try {
@@ -31,12 +53,13 @@ const Details = () => {
       const data = mediaType === 'movie'
         ? await tmdbService.getMovieDetails(id)
         : await tmdbService.getTVShowDetails(id);
-      
+
       setDetails(data);
 
       if (mediaType === 'tv' && data.seasons) {
-        setSeasons(data.seasons.filter(s => s.season_number > 0));
-        setSelectedSeason(data.seasons.find(s => s.season_number > 0));
+        const validSeasons = data.seasons.filter(s => s.season_number > 0 && s.episode_count > 0);
+        setSeasons(validSeasons);
+        setSelectedSeason(validSeasons[0] || null);
       }
     } catch (err) {
       console.error('Error loading details:', err);
@@ -46,12 +69,46 @@ const Details = () => {
     }
   };
 
+  /**
+   * Play intelligente per le serie TV:
+   * 1. Se la serie è in "Continua a guardare" con stagione/episodio validi → riprendi da lì
+   * 2. Altrimenti parte dal primo episodio della prima stagione disponibile
+   */
   const handlePlay = () => {
     if (mediaType === 'movie') {
       navigate(`/player/movie/${id}`);
-    } else if (selectedSeason) {
-      navigate(`/player/tv/${id}/${selectedSeason.season_number}/1`);
+      return;
     }
+
+    // Riprendi: usa l'ultima posizione salvata se ha senso
+    if (watchEntry && watchEntry.season != null && watchEntry.episode != null) {
+      const seasonExists = seasons.some(s => s.season_number === watchEntry.season);
+      if (seasonExists) {
+        navigate(`/player/tv/${id}/${watchEntry.season}/${watchEntry.episode}`);
+        return;
+      }
+    }
+
+    // Prima visione: primo episodio della prima stagione con episodi
+    const firstSeason = seasons.find(s => s.episode_count > 0);
+    if (firstSeason) {
+      navigate(`/player/tv/${id}/${firstSeason.season_number}/1`);
+    }
+  };
+
+  const playEpisode = (episodeNumber) => {
+    if (!selectedSeason) return;
+    navigate(`/player/tv/${id}/${selectedSeason.season_number}/${episodeNumber}`);
+  };
+
+  /** Etichetta del pulsante play principale */
+  const getPlayLabel = () => {
+    if (mediaType !== 'tv') return 'Riproduci';
+    if (watchEntry && watchEntry.season != null && watchEntry.episode != null
+        && seasons.some(s => s.season_number === watchEntry.season)) {
+      return `Riprendi S${watchEntry.season}E${watchEntry.episode}`;
+    }
+    return 'Riproduci S1E1';
   };
 
   const handleToggleFavorite = () => {
@@ -81,16 +138,20 @@ const Details = () => {
   const backdropUrl = tmdbService.getImageUrl(details.backdrop_path, 'original');
   const posterUrl = tmdbService.getImageUrl(details.poster_path, 'w500');
 
+  // Episodio corrente in corso (per evidenziarlo nella lista)
+  const currentEp = (watchEntry && selectedSeason &&
+                     watchEntry.season === selectedSeason.season_number) ? watchEntry.episode : null;
+
   return (
     <div className="min-h-screen pb-12">
       {/* Hero Section */}
       <div className="relative min-h-[70vh] md:h-[70vh] overflow-hidden">
-        <div 
+        <div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${backdropUrl})` }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/80 to-primary/30" />
-        
+
         {/* Back Button */}
         <button
           onClick={() => navigate(-1)}
@@ -139,15 +200,27 @@ const Details = () => {
                 ))}
               </div>
 
-              <div className="flex flex-wrap gap-3 md:gap-4 mb-6">
+              <div className="flex flex-wrap gap-3 md:gap-4 mb-4">
                 <button
                   onClick={handlePlay}
-                  className="btn-primary flex items-center gap-2 text-base md:text-lg flex-1 sm:flex-none justify-center"
+                  disabled={mediaType === 'tv' && !seasons.length}
+                  className="btn-primary flex items-center gap-2 text-base md:text-lg flex-1 sm:flex-none justify-center disabled:opacity-50"
                 >
                   <Play className="w-5 h-5 md:w-6 md:h-6" />
-                  Riproduci
+                  {getPlayLabel()}
                 </button>
-                
+
+                <button
+                  onClick={() => setShowEpisodes(v => !v)}
+                  disabled={mediaType !== 'tv' || !seasons.length}
+                  className={`btn-secondary flex items-center gap-2 text-sm md:text-base disabled:hidden ${
+                    showEpisodes ? 'bg-accent/30' : ''
+                  }`}
+                >
+                  <ListVideo className="w-4 h-4 md:w-5 md:h-5" />
+                  Episodi
+                </button>
+
                 <button
                   onClick={handleToggleFavorite}
                   className={`btn-secondary flex items-center gap-2 text-sm md:text-base ${
@@ -172,35 +245,90 @@ const Details = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 mt-12 space-y-12">
-        {/* Seasons (for TV shows) */}
-        {mediaType === 'tv' && seasons.length > 0 && (
-          <section>
-            <h2 className="text-2xl font-bold text-white mb-6">Stagioni</h2>
-            <div className="flex gap-4 overflow-x-auto pb-4">
-              {seasons.map(season => (
-                <button
-                  key={season.id}
-                  onClick={() => setSelectedSeason(season)}
-                  className={`flex-shrink-0 px-6 py-3 rounded-lg font-semibold transition-all tv-focusable ${
-                    selectedSeason?.id === season.id
-                      ? 'bg-accent text-white'
-                      : 'bg-white/5 text-gray-300 hover:bg-white/15'
-                  }`}
-                >
-                  Stagione {season.season_number}
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
+      {/* Selettore Stagioni + Episodi */}
+      {showEpisodes && seasons.length > 0 && (
+        <section className="container mx-auto px-4 mt-6 animate-fade-in">
+          <h2 className="text-xl font-bold text-white mb-4">Stagioni ed episodi</h2>
 
+          {/* Selettore stagione */}
+          <div className="flex gap-3 overflow-x-auto pb-4">
+            {seasons.map(season => (
+              <button
+                key={season.id}
+                onClick={() => setSelectedSeason(season)}
+                className={`flex-shrink-0 px-6 py-3 rounded-lg font-semibold transition-all tv-focusable ${
+                  selectedSeason?.id === season.id
+                    ? 'bg-accent text-white'
+                    : 'bg-secondary text-gray-300 hover:bg-white/10'
+                }`}
+              >
+                Stagione {season.season_number}
+              </button>
+            ))}
+          </div>
+
+          {/* Lista episodi */}
+          <div className="space-y-2 mt-4 pb-2">
+            {episodesLoading ? (
+              <Loading text="Caricamento episodi..." />
+            ) : episodes.length === 0 ? (
+              <p className="text-gray-400">Nessun episodio disponibile per questa stagione.</p>
+            ) : (
+              episodes.map(ep => {
+                const isCurrent = currentEp === ep.episode_number;
+                return (
+                  <button
+                    key={ep.id}
+                    onClick={() => playEpisode(ep.episode_number)}
+                    className={`w-full text-left flex items-center gap-4 p-3 rounded-card border transition-all duration-200 hover:bg-white/10 tv-focusable ${
+                      isCurrent ? 'border-accent bg-[var(--c-accent-soft)]' : 'border-theme bg-surface-c'
+                    }`}
+                  >
+                    {/* Numero episodio */}
+                    <span className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center font-bold ${
+                      isCurrent ? 'bg-accent text-white' : 'bg-secondary text-gray-300'
+                    }`}>
+                      {ep.episode_number}
+                    </span>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white font-medium truncate">
+                        {ep.name || `Episodio ${ep.episode_number}`}
+                        {isCurrent && <span className="text-accent text-xs ml-2">● in corso</span>}
+                      </p>
+                      {ep.air_date && (
+                        <p className="text-xs text-gray-400">{ep.air_date}</p>
+                      )}
+                    </div>
+
+                    {/* Mini anteprima */}
+                    {ep.still_path && (
+                      <img
+                        src={tmdbService.getImageUrl(ep.still_path, 'w185')}
+                        alt=""
+                        loading="lazy"
+                        className="hidden sm:block w-24 aspect-video object-cover rounded-md flex-shrink-0"
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                    )}
+
+                    <Play className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </section>
+      )}
+
+      <div className="container mx-auto px-4 mt-12 space-y-12">
         {/* Similar Content */}
         {details.similar?.results?.length > 0 && (
           <section>
             <h2 className="text-2xl font-bold text-white mb-6">Contenuti simili</h2>
-            <MediaGrid 
-              items={details.similar.results.slice(0, 12)} 
+            <MediaGrid
+              items={details.similar.results.slice(0, 12)}
               mediaType={mediaType}
             />
           </section>
@@ -210,8 +338,8 @@ const Details = () => {
         {details.recommendations?.results?.length > 0 && (
           <section>
             <h2 className="text-2xl font-bold text-white mb-6">Consigliati per te</h2>
-            <MediaGrid 
-              items={details.recommendations.results.slice(0, 12)} 
+            <MediaGrid
+              items={details.recommendations.results.slice(0, 12)}
               mediaType={mediaType}
             />
           </section>
