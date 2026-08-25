@@ -32,9 +32,16 @@ lerna-debug.log*
 *~
 
 # Capacitor
-android/
+android/app/build/
+android/.gradle/
+android/local.properties
 ios/
 .capacitor/
 
 # Environment
 .env
+
+# Chiavi firma release (MAI committare)
+*.keystore
+*.jks
+vixsrc-keystore-password.txt

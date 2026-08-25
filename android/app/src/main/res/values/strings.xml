@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">VixSrc</string>
+    <string name="title_activity_main">VixSrc</string>
+    <string name="package_name">com.seeker86.vixsrc</string>
+    <string name="custom_url_scheme">com.seeker86.vixsrc</string>
+</resources>
