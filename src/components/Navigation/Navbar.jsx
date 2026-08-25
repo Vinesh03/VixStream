@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Film, Tv, Heart, Clock, Search, Settings, Menu, X } from 'lucide-react';
 import { useDeviceType } from '../../hooks';
