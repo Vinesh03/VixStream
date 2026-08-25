@@ -1,262 +1,93 @@
 # VixSrc Streaming App
 
-App di streaming multi-piattaforma per Android (TV, telefoni, tablet) e Browser basata su VixSrc e TMDB.
+App di streaming multi-piattaforma (Android phone/tablet/TV + browser) basata su VixSrc e TMDB.
 
-## 🚀 Caratteristiche
+![stack](https://img.shields.io/badge/React-18-blue) ![capacitor](https://img.shields.io/badge/Capacitor-6-black) ![vite](https://img.shields.io/badge/Vite-5-purple) ![tailwind](https://img.shields.io/badge/TailwindCSS-3-teal)
 
-- ✅ Streaming video on-demand tramite VixSrc
-- ✅ Catalogo completo film e serie TV da TMDB
-- ✅ Supporto Android TV con navigazione telecomando
-- ✅ Interfaccia responsive per browser, tablet e smartphone
-- ✅ Ricerca avanzata con filtri per genere, anno e rating
-- ✅ Gestione preferiti locale
-- ✅ "Continua a guardare" con tracking progresso
-- ✅ Sottotitoli e qualità video adattiva
-- ✅ Tema ultra-dark ottimizzato
-- ✅ Personalizzazione API key TMDB
+## ✨ Caratteristiche
 
-## 📋 Prerequisiti
+### Catalogo e streaming
+- 🎬 **Catalogo completo** film e serie TV da TMDB (in italiano)
+- ▶️ **Player integrato** VixSrc con token freschi via API (nessun embed scaduto)
+- 🔍 **Ricerca avanzata** con filtri per genere, anno, rating e ordinamento
+- ❤️ **Preferiti** e **"Continua a guardare"** con tracking del progresso (salvataggio ogni 10s)
+- ⏭️ **Al cinema ora**, trending film/serie, top rated
 
-- **Node.js** 18.x o superiore
-- **npm** o **yarn**
-- **Android Studio** (per build Android)
-- **API Key TMDB** (gratuita da https://www.themoviedb.org/settings/api)
+### Layout adattivo
+- 📱 **Telefono**: header compatto + bottom tab bar, griglia 2 colonne
+- 💻 **Tablet/desktop**: navbar classica, griglia responsive 3–6 colonne
+- 📺 **Android TV**: navbar ingrandita, **anello di focus D-pad** (bordo bianco+accento con scale-up), avvio dal launcher Leanback
 
-## 🛠️ Installazione
+### Interfaccia
+- 🎨 **4 temi**: Cinema Dark *(default)* · Liquid Glass (stile Apple) · One UI (Samsung) · AMOLED Pure Black
+- 🌈 **Colore accento personalizzabile** (8 preset + color picker libero)
+- ✨ Animazioni: transizioni pagina, card a cascata, skeleton shimmer
+- 🍎 Tema Liquid Glass con **navbar floating pill** e bolla elastica glossy stile Apple
+- ⚠️ Disclaimer contenuti di terze parti all'avvio ("non mostrare più" disponibile)
 
-### 1. Clona il progetto
+### Android
+- Gesture/pulsante **back** integrato con la navigazione interna
+- Chiusura dalla home con animazione scale-down
+- APK leggero (~3,7 MB)
+
+## 🛠️ Sviluppo
+
+### Prerequisiti
+- Node.js 18+
+- JDK 21 + Android SDK (per la build Android)
 
 ```bash
-# Estrai il file ZIP nella directory desiderata
-# oppure clona il repository Git
-cd vixsrc-streaming-app
-```
-
-### 2. Installa le dipendenze
-
-```bash
+# Installa le dipendenze
 npm install
-```
 
-### 3. Configura Capacitor
-
-```bash
-# Inizializza Capacitor
-npx cap init
-
-# Aggiungi la piattaforma Android
-npx cap add android
-```
-
-## 🎮 Sviluppo
-
-### Browser
-
-```bash
-# Avvia il server di sviluppo
+# Sviluppo browser (http://localhost:3000)
 npm run dev
 
-# L'app sarà disponibile su http://localhost:3000
-```
-
-### Android (Emulatore/Dispositivo)
-
-```bash
-# Build dell'app
+# Build produzione web
 npm run build
 
-# Sincronizza con Android
-npm run android:sync
-
-# Apri in Android Studio
-npm run android:open
-
-# Oppure esegui direttamente
-npm run android:run
+# Build Android
+npm run android:build        # build web + sync
+cd android && ./gradlew assembleDebug   # APK in android/app/build/outputs/apk/debug/
 ```
 
-## 📱 Build di Produzione
+### Configurazione
+- **API key TMDB**: modificabile dall'app (Impostazioni → Chiave API TMDB). Il default è già funzionante.
+- I contenuti video sono serviti da **VixSrc**: l'app ottiene l'URL embed con token fresco tramite `https://vixsrc.to/api/{movie|tv}/{id}`.
 
-### Browser
-
-```bash
-# Build ottimizzato per produzione
-npm run build
-
-# I file saranno in /dist
-```
-
-### Android APK/AAB
-
-1. Apri il progetto in Android Studio:
-```bash
-npm run android:open
-```
-
-2. In Android Studio:
-   - Build > Generate Signed Bundle/APK
-   - Scegli APK o AAB
-   - Configura keystore (crea uno nuovo se necessario)
-   - Build release
-
-3. L'APK/AAB sarà in `android/app/build/outputs/`
-
-## 🎯 Configurazione Android TV
-
-Il progetto include già il supporto per Android TV. Per ottimizzare:
-
-1. Apri `android/app/src/main/AndroidManifest.xml`
-2. Verifica che sia presente:
-
-```xml
-<uses-feature android:name="android.software.leanback" android:required="false" />
-<uses-feature android:name="android.hardware.touchscreen" android:required="false" />
-
-<activity android:name=".MainActivity"
-    android:banner="@drawable/banner"
-    android:screenOrientation="landscape">
-    <intent-filter>
-        <action android:name="android.intent.action.MAIN" />
-        <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
-    </intent-filter>
-</activity>
-```
-
-## 🔑 Gestione API Key
-
-L'app include una API key TMDB di default, ma puoi personalizzarla:
-
-1. **Tramite interfaccia**: Vai in Impostazioni > Chiave API TMDB
-2. **Tramite codice**: Modifica `src/services/tmdb.js`
-
-```javascript
-const DEFAULT_API_KEY = 'TUA_CHIAVE_QUI';
-```
-
-## 🎨 Personalizzazione
-
-### Colori e Tema
-
-Modifica `tailwind.config.js`:
-
-```javascript
-colors: {
-  primary: '#1a1a1a',    // Sfondo principale
-  accent: '#e50914',      // Colore accent (pulsanti, highlight)
-  // ...
-}
-```
-
-### Branding
-
-Il branding "Fatto con vibecoding e amore da SheetSeeker1486" è nelle impostazioni.
-Per modificarlo, vedi `src/pages/Settings.jsx` alla fine della pagina.
-
-## 📂 Struttura del Progetto
+## 📂 Struttura
 
 ```
-vixsrc-streaming-app/
-├── src/
-│   ├── components/         # Componenti React
-│   │   ├── Common/        # Loading, Error, etc.
-│   │   ├── MediaCard/     # Card per film/serie
-│   │   ├── MediaGrid/     # Griglia contenuti
-│   │   ├── Navigation/    # Navbar
-│   │   └── VideoPlayer/   # Player VixSrc
-│   ├── pages/             # Pagine principali
-│   │   ├── Home.jsx
-│   │   ├── Movies.jsx
-│   │   ├── TVShows.jsx
-│   │   ├── Search.jsx
-│   │   ├── Details.jsx
-│   │   ├── Player.jsx
-│   │   ├── Favorites.jsx
-│   │   ├── ContinueWatching.jsx
-│   │   └── Settings.jsx
-│   ├── services/          # API e storage
-│   │   ├── tmdb.js       # TMDB API
-│   │   ├── vixsrc.js     # VixSrc streaming
-│   │   └── storage.js    # LocalStorage
-│   ├── store/            # State management (Zustand)
-│   │   └── useStore.js
-│   ├── hooks/            # Custom hooks
-│   │   └── index.js
-│   ├── styles/           # CSS
-│   │   └── index.css
-│   ├── App.jsx           # App principale
-│   └── main.jsx          # Entry point
-├── android/              # Progetto Android (generato)
-├── public/               # Asset statici
-├── index.html
-├── package.json
-├── vite.config.js
-├── capacitor.config.ts
-└── README.md
+src/
+├── components/
+│   ├── Common/          # Loading, Error, DisclaimerModal, Skeleton,
+│   │                    # PageTransition, ScrollToTop, AndroidBackHandler
+│   ├── Navigation/      # Navbar adattiva (bottom bar / pill floating / top bar TV)
+│   ├── MediaCard/       # Card poster con overlay play/preferiti
+│   ├── MediaGrid/       # Griglia responsive con stagger animation
+│   └── VideoPlayer/     # Player VixSrc (token freschi, fullscreen, countdown)
+├── pages/               # Home, Movies, TVShows, Search, Details, Player,
+│                        # Favorites, ContinueWatching, Settings
+├── services/
+│   ├── tmdb.js          # API TMDB
+│   ├── vixsrc.js        # API VixSrc (+CapacitorHttp per bypass CORS su Android)
+│   ├── storage.js       # localStorage (preferiti, progresso, impostazioni)
+│   ├── themes.js        # Sistema temi via CSS custom properties
+│   └── orientation.js   # Gestione orientamento schermo
+├── hooks/index.js       # useDeviceType, useTVNavigation, useDebounce...
+└── store/useStore.js    # Stato globale (Zustand)
 ```
-
-## 🔧 Troubleshooting
-
-### Il player non carica i video
-- Verifica la connessione internet
-- Controlla che l'ID TMDB sia corretto
-- Verifica che VixSrc sia raggiungibile
-
-### Android TV: navigazione non funziona
-- Assicurati di essere in modalità TV nel manifest
-- Verifica che i componenti abbiano la classe `tv-focusable`
-
-### Build Android fallisce
-- Verifica di avere Android Studio aggiornato
-- Controlla che Java JDK sia installato
-- Sincronizza il progetto Gradle
-
-## 🌐 Deploy Browser
-
-### Netlify/Vercel
-
-1. Collega il repository GitHub
-2. Imposta il build command: `npm run build`
-3. Imposta la directory di output: `dist`
-4. Deploy!
-
-### Server tradizionale
-
-```bash
-npm run build
-# Carica il contenuto di /dist sul server
-```
-
-## 📱 Controlli
-
-### Browser/Desktop
-- **Mouse**: Click per navigare
-- **Tastiera**: Tab per navigazione, Enter per selezionare
-
-### Android TV
-- **Telecomando**: D-pad per navigare, OK per selezionare, Back per tornare indietro
-- **Mouse**: Supportato
-- **Touchscreen**: Supportato (se disponibile)
-
-### Mobile/Tablet
-- **Touch**: Tap per navigare e selezionare
-- **Swipe**: Scorrimento naturale
 
 ## 📄 Licenza
 
-Progetto personale - Fatto con vibecoding e amore da SheetSeeker1486
+Progetto personale — fatto con vibecoding e amore da SheetSeeker1486
 
 ## 🙏 Credits
 
-- **VixSrc**: Servizio di streaming
-- **TMDB**: Database film e serie TV
-- **Capacitor**: Framework multi-piattaforma
-- **React**: UI Framework
-- **TailwindCSS**: Styling
-
-## 📞 Supporto
-
-Per problemi o domande, crea una issue nel repository GitHub.
+- [VixSrc](https://vixsrc.to) — sorgenti streaming
+- [TMDB](https://www.themoviedb.org) — database film e serie TV
+- [Capacitor](https://capacitorjs.com), [React](https://react.dev), [TailwindCSS](https://tailwindcss.com)
 
 ---
 
-**Made with ❤️ by SheetSeeker1486**
+> ⚠️ **Avvertenza**: questa app è solo un'interfaccia verso servizi di terze parti. I contenuti video sono forniti e gestiti interamente da VixSrc e non dipendono dagli sviluppatori. Usala in modo consapevole e nel rispetto delle leggi del tuo paese.
