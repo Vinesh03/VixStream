@@ -35,22 +35,45 @@ const BottomTabBar = ({ pathname }) => {
   if (isGlass) {
     return (
       <nav
-        className="fixed left-1/2 -translate-x-1/2 z-40 md:hidden"
+        className="fixed left-1/2 -translate-x-1/2 z-40 md:hidden animate-nav-float"
         style={{ bottom: 'calc(env(safe-area-inset-bottom) + 14px)' }}
       >
         <div className="glass-panel border border-white/20 rounded-full shadow-2xl overflow-hidden">
           <div className="relative flex items-center px-2 py-1.5">
-            {/* Bolla scivolante (indicatore animato stile Apple) */}
+            {/* Bolla scivolante con riflesso glossy (stile Apple) */}
             <span
               aria-hidden="true"
-              className="absolute top-1 bottom-1 w-16 rounded-full bg-white/15 border border-white/10 shadow-inner"
+              className="absolute top-1 bottom-1 w-16 rounded-full overflow-hidden"
               style={{
                 left: '8px',
                 transform: `translateX(${Math.max(activeIndex, 0) * 64}px)`,
-                transition: 'transform .35s cubic-bezier(.34,1.3,.5,1)',
+                transition: 'transform .4s cubic-bezier(.34,1.3,.5,1)',
                 opacity: activeIndex >= 0 ? 1 : 0,
+                background: 'linear-gradient(180deg, rgba(255,255,255,.28) 0%, rgba(255,255,255,.12) 45%, rgba(255,255,255,.04) 100%)',
+                border: '1px solid rgba(255,255,255,.22)',
+                boxShadow: 'inset 0 1px 1px rgba(255,255,255,.35), inset 0 -1px 2px rgba(0,0,0,.15), 0 2px 8px rgba(0,0,0,.25)',
               }}
-            />
+            >
+              {/* Riflesso lucido in alto (highlight) */}
+              <span
+                className="absolute"
+                style={{
+                  top: '1px', left: '6px', right: '6px', height: '42%',
+                  borderRadius: '9999px 9999px 60% 60%',
+                  background: 'linear-gradient(180deg, rgba(255,255,255,.45), rgba(255,255,255,0))',
+                  filter: 'blur(.5px)',
+                }}
+              />
+              {/* Bagliore inferiore */}
+              <span
+                className="absolute"
+                style={{
+                  bottom: '2px', left: '25%', right: '25%', height: '22%',
+                  borderRadius: '50%',
+                  background: 'radial-gradient(ellipse at center, rgba(255,255,255,.18), transparent 70%)',
+                }}
+              />
+            </span>
             {TAB_ITEMS.map(({ path, label, icon: Icon }) => {
               const isActive = pathname === path;
               return (
@@ -75,9 +98,9 @@ const BottomTabBar = ({ pathname }) => {
     );
   }
 
-  // Barra classica full-width per gli altri temi
+  // Barra classica full-width per gli altri temi (con animazione di morphing)
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 glass-panel border-t border-theme md:hidden pb-[env(safe-area-inset-bottom)]">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 glass-panel border-t border-theme md:hidden pb-[env(safe-area-inset-bottom)] animate-nav-bar">
       <div className="flex items-center justify-around h-16">
         {TAB_ITEMS.map(({ path, label, icon: Icon }) => {
           const isActive = pathname === path;

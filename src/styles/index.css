@@ -157,6 +157,21 @@
 .animate-fade-in { animation: fade-in .3s ease both; }
 .animate-slide-up { animation: slide-up .45s cubic-bezier(.2,.8,.2,1) both; }
 
+/* Transizione tra navbar classiche e pillola floating Liquid Glass:
+   entrambe entrano con un morph morbido (scale+slide dal basso) */
+@keyframes nav-float-in {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(28px) scale(.85); }
+  60%  { transform: translateX(-50%) translateY(-4px) scale(1.02); }
+  100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+.animate-nav-float { animation: nav-float-in .45s cubic-bezier(.22,1.2,.36,1) both; }
+
+@keyframes nav-bar-in {
+  from { opacity: 0; transform: translateY(100%); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-nav-bar { animation: nav-bar-in .4s cubic-bezier(.22,1.2,.36,1) both; }
+
 /* Alias Tailwind-legacy → variabili tema */
 .bg-primary { background-color: var(--c-bg) !important; transition: background-color .3s ease; }
 .bg-primary-light { background-color: var(--c-bg-light) !important; }
