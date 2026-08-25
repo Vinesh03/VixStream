@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Film, Tv, Heart, Clock, Search, Settings, Menu, X } from 'lucide-react';
 import { useDeviceType } from '../../hooks';
+import useStore from '../../store/useStore';
 
 const navItems = [
   { path: '/', label: 'Home', icon: Home },
@@ -24,10 +25,12 @@ const TAB_ITEMS = [
 
 /**
  * Bottom tab bar mobile. Nel tema Liquid Glass diventa una pillola floating
- * staccata dai bordi (stile Apple); negli altri temi resta la barra classica.
+ * con indicatore che scivola sulla voce attiva (stile Apple).
  */
 const BottomTabBar = ({ pathname }) => {
-  const isGlass = document.documentElement.dataset.theme === 'glass';
+  const themeId = useStore((s) => s.settings.theme || 'cinema');
+  const isGlass = themeId === 'glass';
+  const activeIndex = TAB_ITEMS.findIndex(t => t.path === pathname);
 
   if (isGlass) {
     return (
@@ -36,7 +39,18 @@ const BottomTabBar = ({ pathname }) => {
         style={{ bottom: 'calc(env(safe-area-inset-bottom) + 14px)' }}
       >
         <div className="glass-panel border border-white/20 rounded-full shadow-2xl overflow-hidden">
-          <div className="flex items-center px-2 py-1.5 gap-1">
+          <div className="relative flex items-center px-2 py-1.5">
+            {/* Bolla scivolante (indicatore animato stile Apple) */}
+            <span
+              aria-hidden="true"
+              className="absolute top-1 bottom-1 w-16 rounded-full bg-white/15 border border-white/10 shadow-inner"
+              style={{
+                left: '8px',
+                transform: `translateX(${Math.max(activeIndex, 0) * 64}px)`,
+                transition: 'transform .35s cubic-bezier(.34,1.3,.5,1)',
+                opacity: activeIndex >= 0 ? 1 : 0,
+              }}
+            />
             {TAB_ITEMS.map(({ path, label, icon: Icon }) => {
               const isActive = pathname === path;
               return (
@@ -44,18 +58,12 @@ const BottomTabBar = ({ pathname }) => {
                   key={path}
                   to={path}
                   aria-label={label}
-                  className={`relative flex flex-col items-center justify-center w-16 h-14 rounded-full transition-all duration-300 ${
+                  className={`relative z-10 flex flex-col items-center justify-center w-16 h-14 rounded-full transition-colors duration-300 ${
                     isActive ? 'text-[var(--c-accent)]' : 'text-gray-300'
                   }`}
                 >
-                  {/* Pillola animata dietro l'icona attiva */}
-                  <span
-                    className={`absolute inset-x-1 top-1 bottom-1 rounded-full bg-white/10 transition-all duration-300 ${
-                      isActive ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
-                    }`}
-                  />
-                  <Icon className={`relative w-5 h-5 transition-transform duration-300 ${isActive ? 'scale-110 -translate-y-0.5' : ''}`} />
-                  <span className={`relative text-[9px] font-medium mt-0.5 transition-all duration-300 ${isActive ? 'opacity-100' : 'opacity-70'}`}>
+                  <Icon className={`w-5 h-5 transition-transform duration-300 ${isActive ? 'scale-110 -translate-y-0.5' : ''}`} />
+                  <span className={`text-[9px] font-medium mt-0.5 transition-all duration-300 ${isActive ? 'opacity-100' : 'opacity-70'}`}>
                     {label}
                   </span>
                 </Link>
