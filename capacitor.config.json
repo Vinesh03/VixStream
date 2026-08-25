@@ -1,6 +1,6 @@
 {
-  "appId": "com.seeker86.vixsrc",
-  "appName": "VixSrc",
+  "appId": "com.seeker86.vixstream",
+  "appName": "VixStream",
   "webDir": "dist",
   "server": {
     "androidScheme": "https",
