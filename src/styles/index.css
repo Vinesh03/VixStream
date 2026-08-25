@@ -208,3 +208,24 @@
 :root[data-theme="glass"] body {
   padding-bottom: calc(6rem + env(safe-area-inset-bottom));
 }
+
+/* Campi input e dropdown coerenti col tema (fix bianco su bianco) */
+.input-field {
+  background-color: var(--c-surface);
+  color: #fff;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-card);
+  padding: .6rem .9rem;
+  font-size: .95rem;
+  transition: border-color .2s ease, background-color .3s ease;
+}
+.input-field:focus {
+  outline: none;
+  border-color: var(--c-accent);
+}
+/* Opzioni dei select (dropdown nativi) a tema scuro */
+select.input-field option,
+select.input-field optgroup {
+  background-color: var(--c-bg-light);
+  color: #fff;
+}

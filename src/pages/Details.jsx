@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Star, Play, Heart, Clock, ArrowLeft, ListVideo } from 'lucide-react';
+import { Star, Play, Heart, Clock, ArrowLeft, ListVideo, Check, EyeOff, RotateCcw, X } from 'lucide-react';
 import tmdbService from '../services/tmdb';
 import useStore from '../store/useStore';
 import Loading from '../components/Common/Loading';
@@ -19,7 +19,7 @@ const Details = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const { isFavorite, addFavorite, removeFavorite, continueWatching } = useStore();
+  const { isFavorite, addFavorite, removeFavorite, continueWatching, removeContinueWatching, updateProgress } = useStore();
   const isFav = details ? isFavorite(details.id, mediaType) : false;
 
   // Ultimo progresso per questa serie (per "riprendi da dove eri")
@@ -99,6 +99,43 @@ const Details = () => {
   const playEpisode = (episodeNumber) => {
     if (!selectedSeason) return;
     navigate(`/player/tv/${id}/${selectedSeason.season_number}/${episodeNumber}`);
+  };
+
+  /** Azioni sugli episodi: visto / non visto / sono arrivato qui / rimuovi */
+  const isEpisodeWatched = (epNum) => {
+    // un episodio è "visto" se esiste una voce CW per un episodio successivo della stessa stagione,
+    // oppure se c'è una voce di stagione successiva
+    if (!watchEntry) return false;
+    if (watchEntry.season > selectedSeason?.season_number) return true;
+    if (watchEntry.season === selectedSeason?.season_number && watchEntry.episode > epNum) return true;
+    return false;
+  };
+
+  const markEpisodeArrivedHere = (epNum) => {
+    // segna questo episodio come quello in corso (progresso 0)
+    updateProgress(id, 'tv', 0, selectedSeason?.season_number, epNum);
+    if (details) {
+      // assicura la voce con titolo e poster
+      addContinueWatchingEntry({
+        id: details.id,
+        media_type: 'tv',
+        season: selectedSeason?.season_number,
+        episode: epNum,
+        title: details.name || details.title,
+        poster_path: details.poster_path,
+        backdrop_path: details.backdrop_path,
+        progress: 0
+      });
+    }
+  };
+
+  // helper che usa direttamente storage via store addContinueWatching
+  const addContinueWatchingEntry = (item) => {
+    useStore.getState().addContinueWatching(item);
+  };
+
+  const removeSeriesFromCW = () => {
+    removeContinueWatching(id, 'tv', watchEntry?.season, watchEntry?.episode);
   };
 
   /** Etichetta del pulsante play principale */
@@ -276,29 +313,61 @@ const Details = () => {
             ) : (
               episodes.map(ep => {
                 const isCurrent = currentEp === ep.episode_number;
+                const watched = isEpisodeWatched(ep.episode_number);
                 return (
-                  <button
+                  <div
                     key={ep.id}
-                    onClick={() => playEpisode(ep.episode_number)}
-                    className={`w-full text-left flex items-center gap-4 p-3 rounded-card border transition-all duration-200 hover:bg-white/10 tv-focusable ${
+                    className={`w-full flex items-center gap-4 p-3 rounded-card border transition-all duration-200 hover:bg-white/10 ${
                       isCurrent ? 'border-accent bg-[var(--c-accent-soft)]' : 'border-theme bg-surface-c'
-                    }`}
+                    } ${watched ? 'opacity-60' : ''}`}
                   >
                     {/* Numero episodio */}
-                    <span className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center font-bold ${
-                      isCurrent ? 'bg-accent text-white' : 'bg-secondary text-gray-300'
-                    }`}>
-                      {ep.episode_number}
-                    </span>
+                    <button
+                      onClick={() => playEpisode(ep.episode_number)}
+                      className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center font-bold tv-focusable ${
+                        isCurrent ? 'bg-accent text-white' : watched ? 'bg-green-700 text-white' : 'bg-secondary text-gray-300'
+                      }`}
+                      title={watched ? 'Già visto' : 'Riproduci'}
+                    >
+                      {watched ? <Check className="w-4 h-4" /> : ep.episode_number}
+                    </button>
 
                     {/* Info */}
-                    <div className="flex-1 min-w-0">
+                    <button
+                      onClick={() => playEpisode(ep.episode_number)}
+                      className="flex-1 min-w-0 text-left"
+                    >
                       <p className="text-white font-medium truncate">
                         {ep.name || `Episodio ${ep.episode_number}`}
                         {isCurrent && <span className="text-accent text-xs ml-2">● in corso</span>}
+                        {watched && !isCurrent && <span className="text-green-500 text-xs ml-2">✓ visto</span>}
                       </p>
                       {ep.air_date && (
                         <p className="text-xs text-gray-400">{ep.air_date}</p>
+                      )}
+                    </button>
+
+                    {/* Azioni episodio */}
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      {!isCurrent && (
+                        <button
+                          onClick={() => markEpisodeArrivedHere(ep.episode_number)}
+                          aria-label="Sono arrivato qui"
+                          title="Sono arrivato qui (segna come in corso)"
+                          className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                        >
+                          <RotateCcw className="w-4 h-4 text-gray-300" />
+                        </button>
+                      )}
+                      {isCurrent && (
+                        <button
+                          onClick={removeSeriesFromCW}
+                          aria-label="Segna come non visto (rimuovi da Continua a guardare)"
+                          title="Segna come non visto"
+                          className="p-2 rounded-lg hover:bg-white/10 transition-colors"
+                        >
+                          <EyeOff className="w-4 h-4 text-gray-300" />
+                        </button>
                       )}
                     </div>
 
@@ -308,13 +377,12 @@ const Details = () => {
                         src={tmdbService.getImageUrl(ep.still_path, 'w185')}
                         alt=""
                         loading="lazy"
-                        className="hidden sm:block w-24 aspect-video object-cover rounded-md flex-shrink-0"
+                        className="hidden sm:block w-24 aspect-video object-cover rounded-md flex-shrink-0 cursor-pointer"
+                        onClick={() => playEpisode(ep.episode_number)}
                         onError={(e) => { e.target.style.display = 'none'; }}
                       />
                     )}
-
-                    <Play className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                  </button>
+                  </div>
                 );
               })
             )}

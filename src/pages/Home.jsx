@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { TrendingUp, Film, Tv, Star, Play } from 'lucide-react';
+import { TrendingUp, Film, Tv, Star, Play, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import tmdbService from '../services/tmdb';
 import MediaGrid from '../components/MediaGrid/MediaGrid';
+import MediaCard from '../components/MediaCard/MediaCard';
 import Loading from '../components/Common/Loading';
 import ErrorMessage from '../components/Common/ErrorMessage';
 import useStore from '../store/useStore';
@@ -15,7 +16,14 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  const { continueWatching } = useStore();
+  const { continueWatching, removeContinueWatching } = useStore();
+
+  /** Rimuove un contenuto da "Continua a guardare" */
+  const handleRemoveCW = (item) => {
+    if (confirm(`Rimuovere "${item.title || item.name}" da Continua a guardare?`)) {
+      removeContinueWatching(item.id, item.media_type, item.season, item.episode);
+    }
+  };
 
   useEffect(() => {
     loadContent();
@@ -96,7 +104,28 @@ const Home = () => {
               <Film className="w-6 h-6 text-accent" />
               <h2 className="text-2xl font-bold text-white">Continua a guardare</h2>
             </div>
-            <MediaGrid items={continueWatching} mediaTypeOverride />
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              {continueWatching.map((item, i) => (
+                <div key={`${item.id}-${i}`} className="relative group/cw animate-slide-up" style={{ animationDelay: `${Math.min(i * 45, 400)}ms` }}>
+                  <MediaCard item={item} mediaType={item.media_type || 'movie'} />
+                  {/* barra progresso */}
+                  {item.progress > 0 && (
+                    <div className="absolute top-[calc(100%*(2/3)-6px)] left-3 right-3 h-1 bg-gray-700/80 rounded-full overflow-hidden pointer-events-none z-10">
+                      <div className="h-full bg-accent" style={{ width: `${Math.min(item.progress, 100)}%` }} />
+                    </div>
+                  )}
+                  {/* X rimozione */}
+                  <button
+                    onClick={() => handleRemoveCW(item)}
+                    aria-label="Rimuovi da Continua a guardare"
+                    title="Rimuovi da Continua a guardare"
+                    className="absolute top-2 right-2 z-20 p-1.5 rounded-full bg-black/70 hover:bg-red-600 opacity-0 group-hover/cw:opacity-100 transition-opacity"
+                  >
+                    <X className="w-4 h-4 text-white" />
+                  </button>
+                </div>
+              ))}
+            </div>
           </section>
         )}
 
