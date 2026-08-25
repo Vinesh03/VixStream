@@ -187,10 +187,9 @@ const VideoPlayer = ({
         ref={iframeRef}
         src={streamUrl}
         className="w-full h-full border-0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
         allowFullScreen
         title={`Player - ${title}`}
-        sandbox="allow-scripts allow-same-origin allow-presentation allow-forms allow-popups"
       />
       )}
 
