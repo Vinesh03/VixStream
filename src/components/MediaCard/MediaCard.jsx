@@ -56,7 +56,7 @@ const MediaCard = ({
       tabIndex={0}
       onClick={handleClick}
       onFocus={onFocus}
-      className={`card tv-focusable group cursor-pointer ${className}`}
+      className={`card card-interactive tv-focusable group cursor-pointer ${className}`}
     >
       <div className="relative aspect-[2/3] bg-secondary">
         <img

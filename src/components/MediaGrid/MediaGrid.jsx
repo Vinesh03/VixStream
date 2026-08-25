@@ -1,5 +1,6 @@
 import React from 'react';
 import MediaCard from '../MediaCard/MediaCard';
+import MediaGridSkeleton from '../Common/MediaGridSkeleton';
 import Loading from '../Common/Loading';
 
 const MediaGrid = ({ 
@@ -10,7 +11,7 @@ const MediaGrid = ({
   className = ''
 }) => {
   if (loading) {
-    return <Loading text="Caricamento contenuti..." />;
+    return <MediaGridSkeleton />;
   }
 
   if (!items || items.length === 0) {
@@ -24,12 +25,17 @@ const MediaGrid = ({
   return (
     <div className={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 ${className}`}>
       {items.map((item, index) => (
-        <MediaCard
+        <div
           key={`${item.id}-${index}`}
-          item={item}
-          mediaType={mediaTypeOverride ? (item.media_type || mediaType) : mediaType}
-          autoFocus={index === 0}
-        />
+          className="animate-slide-up"
+          style={{ animationDelay: `${Math.min(index * 45, 400)}ms` }}
+        >
+          <MediaCard
+            item={item}
+            mediaType={mediaTypeOverride ? (item.media_type || mediaType) : mediaType}
+            autoFocus={index === 0}
+          />
+        </div>
       ))}
     </div>
   );

@@ -4,6 +4,7 @@ import Navbar from './components/Navigation/Navbar';
 import DisclaimerModal from './components/Common/DisclaimerModal';
 import AndroidBackHandler from './components/Common/AndroidBackHandler';
 import ScrollToTop from './components/Common/ScrollToTop';
+import PageTransition from './components/Common/PageTransition';
 import Home from './pages/Home';
 import Movies from './pages/Movies';
 import TVShows from './pages/TVShows';
@@ -39,18 +40,20 @@ function App() {
             element={
               <>
                 <Navbar />
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/movies" element={<Movies />} />
-                  <Route path="/tv-shows" element={<TVShows />} />
-                  <Route path="/search" element={<Search />} />
-                  <Route path="/favorites" element={<Favorites />} />
-                  <Route path="/continue-watching" element={<ContinueWatching />} />
-                  <Route path="/details/:mediaType/:id" element={<Details />} />
-                  <Route path="/settings" element={<Settings />} />
-                  {/* Catch-all: qualsiasi URL sconosciuto torna alla home */}
-                  <Route path="*" element={<Home />} />
-                </Routes>
+                <PageTransition>
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/movies" element={<Movies />} />
+                    <Route path="/tv-shows" element={<TVShows />} />
+                    <Route path="/search" element={<Search />} />
+                    <Route path="/favorites" element={<Favorites />} />
+                    <Route path="/continue-watching" element={<ContinueWatching />} />
+                    <Route path="/details/:mediaType/:id" element={<Details />} />
+                    <Route path="/settings" element={<Settings />} />
+                    {/* Catch-all: qualsiasi URL sconosciuto torna alla home */}
+                    <Route path="*" element={<Home />} />
+                  </Routes>
+                </PageTransition>
               </>
             }
           />
