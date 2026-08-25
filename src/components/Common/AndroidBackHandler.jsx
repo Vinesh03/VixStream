@@ -30,9 +30,18 @@ const AndroidBackHandler = () => {
         } else if (!atRoot && !canGoBack) {
           navigate('/');
         } else {
-          // Siamo alla radice: lasciamo chiudere → Android mostra
-          // l'anteprima slide-to-close della gesture predictiva.
-          CapacitorApp.exitApp();
+          // Siamo alla radice: animazione di chiusura stile predictive back
+          // (scale-down + fade), poi usciamo.
+          const root = document.getElementById('root');
+          if (root) {
+            root.style.transition = 'transform 220ms cubic-bezier(.3,0,.7,.4), opacity 220ms ease';
+            root.style.transformOrigin = '50% 92%';
+            root.style.transform = 'scale(0.88)';
+            root.style.opacity = '0.35';
+            root.style.borderRadius = '24px';
+            root.style.overflow = 'hidden';
+          }
+          setTimeout(() => CapacitorApp.exitApp(), 230);
         }
       });
     };
