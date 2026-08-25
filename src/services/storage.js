@@ -133,7 +133,8 @@ class StorageService {
 
   // Settings
   getSettings() {
-    return this.get(this.SETTINGS_KEY) || this.getDefaultSettings();
+    // merge con i default: i vecchi settings salvati senza autoRotate la ereditano (false)
+    return { ...this.getDefaultSettings(), ...(this.get(this.SETTINGS_KEY) || {}) };
   }
 
   getDefaultSettings() {

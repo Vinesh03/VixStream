@@ -79,7 +79,7 @@ const TVShows = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-primary-light rounded-lg p-6 mb-8 border border-secondary">
+      <div className="bg-app-light rounded-card p-6 mb-8 border border-theme">
         <div className="flex items-center gap-2 mb-4">
           <Filter className="w-5 h-5 text-accent" />
           <h2 className="text-lg font-semibold text-white">Filtri</h2>

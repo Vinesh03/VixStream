@@ -6,6 +6,7 @@ import AndroidBackHandler from './components/Common/AndroidBackHandler';
 import ScrollToTop from './components/Common/ScrollToTop';
 import PageTransition from './components/Common/PageTransition';
 import { applyRotationSetting } from './services/orientation';
+import { applyTheme } from './services/themes';
 import Home from './pages/Home';
 import Movies from './pages/Movies';
 import TVShows from './pages/TVShows';
@@ -22,9 +23,10 @@ function App() {
     () => localStorage.getItem('vixsrc_disclaimer_accepted') !== 'true'
   );
 
-  // Applica il blocco/permesso rotazione all'avvio (default: bloccata)
+  // Applica tema e rotazione salvati all'avvio
   useEffect(() => {
     const s = JSON.parse(localStorage.getItem('vixsrc_settings') || '{}');
+    applyTheme(s.theme);
     applyRotationSetting(s.autoRotate === true);
   }, []);
 

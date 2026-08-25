@@ -63,7 +63,7 @@ const Search = () => {
           {query && (
             <button
               onClick={clearSearch}
-              className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-secondary-light rounded-full transition-colors"
+              className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-white/10 rounded-full transition-colors"
               aria-label="Cancella ricerca"
             >
               <X className="w-5 h-5 text-gray-400" />
@@ -78,7 +78,7 @@ const Search = () => {
             className={`px-6 py-2 rounded-lg font-semibold transition-all tv-focusable ${
               activeTab === 'movie'
                 ? 'bg-accent text-white'
-                : 'bg-secondary text-gray-300 hover:bg-secondary-light'
+                : 'bg-white/5 text-gray-300 hover:bg-white/15'
             }`}
           >
             Film
@@ -88,7 +88,7 @@ const Search = () => {
             className={`px-6 py-2 rounded-lg font-semibold transition-all tv-focusable ${
               activeTab === 'tv'
                 ? 'bg-accent text-white'
-                : 'bg-secondary text-gray-300 hover:bg-secondary-light'
+                : 'bg-white/5 text-gray-300 hover:bg-white/15'
             }`}
           >
             Serie TV

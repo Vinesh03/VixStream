@@ -185,7 +185,7 @@ const Details = () => {
                   className={`flex-shrink-0 px-6 py-3 rounded-lg font-semibold transition-all tv-focusable ${
                     selectedSeason?.id === season.id
                       ? 'bg-accent text-white'
-                      : 'bg-secondary text-gray-300 hover:bg-secondary-light'
+                      : 'bg-white/5 text-gray-300 hover:bg-white/15'
                   }`}
                 >
                   Stagione {season.season_number}

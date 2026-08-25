@@ -24,7 +24,7 @@ const Navbar = () => {
     return (
       <>
         {/* Header compatto mobile */}
-        <nav className="bg-primary-light border-b border-secondary sticky top-0 z-40 md:hidden">
+        <nav className="glass-panel border-b border-theme sticky top-0 z-40 md:hidden">
           <div className="flex items-center justify-between h-14 px-4">
             <Link to="/" className="text-xl font-bold text-accent">
               VixSrc
@@ -49,7 +49,7 @@ const Navbar = () => {
         </nav>
 
         {/* Bottom tab bar mobile */}
-        <nav className="fixed bottom-0 left-0 right-0 z-40 bg-primary-light/95 backdrop-blur border-t border-secondary md:hidden pb-[env(safe-area-inset-bottom)]">
+        <nav className="fixed bottom-0 left-0 right-0 z-40 glass-panel border-t border-theme md:hidden pb-[env(safe-area-inset-bottom)]">
           <div className="flex items-center justify-around h-16">
             {[{ path: '/', label: 'Home', icon: Home },
               { path: '/movies', label: 'Film', icon: Film },
@@ -78,7 +78,7 @@ const Navbar = () => {
 
   // Navbar orizzontale classica per desktop/tablet/TV (D-pad friendly)
   return (
-    <nav className="bg-primary-light border-b border-secondary sticky top-0 z-40">
+    <nav className="glass-panel border-b border-theme sticky top-0 z-40">
       <div className={deviceType === 'androidtv' || isTV ? 'container mx-auto px-12' : 'container mx-auto px-4'}>
         <div className={`flex items-center justify-between ${deviceType === 'androidtv' || isTV ? 'h-20' : 'h-16'}`}>
           {/* Logo */}
@@ -102,7 +102,7 @@ const Navbar = () => {
                   ${(deviceType === 'androidtv' || isTV) ? 'px-5 py-3 text-lg' : 'px-4 py-2'}
                   ${location.pathname === path
                     ? 'bg-accent text-white'
-                    : 'text-gray-300 hover:bg-secondary hover:text-white'
+                    : 'text-gray-300 hover:bg-white/10 hover:text-white'
                   }
                 `}
               >
@@ -115,7 +115,7 @@ const Navbar = () => {
               className={`p-2 ml-2 rounded-lg transition-all tv-focusable ${
                 location.pathname === '/settings'
                   ? 'bg-accent text-white'
-                  : 'text-gray-300 hover:bg-secondary hover:text-white'
+                  : 'text-gray-300 hover:bg-white/10 hover:text-white'
               }`}
               aria-label="Impostazioni"
             >

@@ -3,7 +3,9 @@ import { Settings as SettingsIcon, Key, Trash2, Save, RefreshCw, Heart, Info, Ro
 import tmdbService from '../services/tmdb';
 import useStore from '../store/useStore';
 import { applyRotationSetting } from '../services/orientation';
+import { THEMES, applyTheme } from '../services/themes';
 import { Capacitor } from '@capacitor/core';
+import { Palette } from 'lucide-react';
 
 const Settings = () => {
   const { settings, updateSettings, clearAllData, resetSettings } = useStore();
@@ -57,9 +59,66 @@ const Settings = () => {
       </div>
 
       <div className="space-y-6">
+        {/* Tema */}
+        <section className="bg-app-light rounded-card p-6 border border-theme">
+          <div className="flex items-center gap-2 mb-4">
+            <Palette className="w-5 h-5 text-accent" />
+            <h2 className="text-xl font-semibold text-white">Tema</h2>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {Object.entries(THEMES).map(([id, theme]) => {
+              const active = (settings.theme || 'cinema') === id;
+              return (
+                <button
+                  key={id}
+                  onClick={() => {
+                    updateSettings({ theme: id });
+                    applyTheme(id);
+                  }}
+                  className={`rounded-card p-3 text-left border transition-all duration-200 active:scale-[.97] ${
+                    active
+                      ? 'border-accent ring-2 ring-[var(--c-accent-soft)]'
+                      : 'border-theme hover:border-white/25'
+                  }`}
+                  style={{ backgroundColor: 'var(--c-surface)' }}
+                >
+                  {/* Anteprima mini */}
+                  <div
+                    className="h-10 rounded-xl mb-2 relative overflow-hidden"
+                    style={{
+                      background:
+                        id === 'glass'
+                          ? 'linear-gradient(135deg,#1e2a4a 0%,#0a84ff33 60%),#0d0d12'
+                          : id === 'amoled'
+                          ? '#000'
+                          : id === 'oneui'
+                          ? '#010101'
+                          : '#101014',
+                    }}
+                  >
+                    <span
+                      className="absolute bottom-1.5 left-1.5 w-6 h-6 rounded-md"
+                      style={{ backgroundColor: theme.vars['--c-accent'] }}
+                    />
+                    {id === 'glass' && (
+                      <span
+                        className="absolute top-1.5 right-1.5 left-8 bottom-6 rounded-md"
+                        style={{ background: 'rgba(255,255,255,.12)', backdropFilter: 'blur(2px)' }}
+                      />
+                    )}
+                  </div>
+                  <p className="text-sm font-medium text-white leading-tight">{theme.label}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">{active ? 'In uso' : theme.hint}</p>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
         {/* Auto-rotazione (solo su app nativa) */}
         {isNative && (
-          <section className="bg-primary-light rounded-card p-6 border border-secondary">
+          <section className="bg-app-light rounded-card p-6 border border-theme">
             <div className="flex items-center gap-2 mb-4">
               <RotateCw className="w-5 h-5 text-accent" />
               <h2 className="text-xl font-semibold text-white">Schermo</h2>
@@ -91,7 +150,7 @@ const Settings = () => {
         )}
 
         {/* API Key Section */}
-        <section className="bg-primary-light rounded-lg p-6 border border-secondary">
+        <section className="bg-app-light rounded-card p-6 border border-theme">
           <div className="flex items-center gap-2 mb-4">
             <Key className="w-5 h-5 text-accent" />
             <h2 className="text-xl font-semibold text-white">Chiave API TMDB</h2>
@@ -148,7 +207,7 @@ const Settings = () => {
         </section>
 
         {/* Playback Settings */}
-        <section className="bg-primary-light rounded-lg p-6 border border-secondary">
+        <section className="bg-app-light rounded-card p-6 border border-theme">
           <h2 className="text-xl font-semibold text-white mb-4">Riproduzione</h2>
           
           <div className="space-y-4">
@@ -216,7 +275,7 @@ const Settings = () => {
         </section>
 
         {/* Data Management */}
-        <section className="bg-primary-light rounded-lg p-6 border border-secondary">
+        <section className="bg-app-light rounded-card p-6 border border-theme">
           <h2 className="text-xl font-semibold text-white mb-4">Gestione dati</h2>
           
           <div className="space-y-4">
@@ -250,13 +309,13 @@ const Settings = () => {
         </section>
 
         {/* About / Branding */}
-        <section className="bg-primary-light rounded-lg p-6 border border-secondary">
+        <section className="bg-app-light rounded-card p-6 border border-theme">
           <h2 className="text-xl font-semibold text-white mb-4">Informazioni</h2>
           
           <div className="space-y-2 text-sm text-gray-400">
             <p>VixSrc Streaming App</p>
             <p>Versione 1.0.0</p>
-            <p className="flex items-center gap-2 pt-4 border-t border-secondary mt-4">
+            <p className="flex items-center gap-2 pt-4 border-t border-theme mt-4">
               <Heart className="w-4 h-4 text-accent fill-accent" />
               <span>Fatto con <span className="text-accent font-semibold">vibecoding</span> e amore da <span className="text-white font-semibold">SheetSeeker1486</span></span>
             </p>

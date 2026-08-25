@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { X, Maximize2, Minimize2, ExternalLink, AlertTriangle } from 'lucide-react';
 import vixsrcService from '../../services/vixsrc';
+import tmdbService from '../../services/tmdb';
 import useStore from '../../store/useStore';
 
 const VideoPlayer = ({ 
@@ -20,6 +21,7 @@ const VideoPlayer = ({
   const [showExternalHint, setShowExternalHint] = useState(true);
   const [streamUrl, setStreamUrl] = useState(null);
   const [streamError, setStreamError] = useState(null);
+  const detailsRef = useRef(null);
   
   const { 
     addContinueWatching, 
@@ -27,6 +29,18 @@ const VideoPlayer = ({
     addToWatchHistory,
     settings 
   } = useStore();
+
+  // Carica i dettagli TMDB (per il poster in "continua a guardare")
+  useEffect(() => {
+    let cancelled = false;
+    const fetchDetails = mediaType === 'movie'
+      ? tmdbService.getMovieDetails(tmdbId)
+      : tmdbService.getTVShowDetails(tmdbId);
+    fetchDetails
+      .then(d => { if (!cancelled) detailsRef.current = d; })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [tmdbId, mediaType]);
 
   useEffect(() => {
     let lastSaved = 0;
@@ -45,13 +59,15 @@ const VideoPlayer = ({
       },
       onPlay: (time, dur) => {
         setShowExternalHint(false);
-        // Add to continue watching when playback starts
+        // Add to continue watching when playback starts (con poster per la card)
         addContinueWatching({
           id: tmdbId,
           media_type: mediaType,
           season,
           episode,
           title,
+          poster_path: detailsRef.current?.poster_path,
+          backdrop_path: detailsRef.current?.backdrop_path,
           progress: dur > 0 ? (time / dur) * 100 : 0,
           currentTime: time,
           duration: dur
@@ -199,7 +215,7 @@ const VideoPlayer = ({
       {/* Avviso contenuti esterni */}
       {showExternalHint && (
         <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-10 max-w-md mx-4">
-          <div className="bg-primary-light/95 border border-secondary rounded-xl p-4 flex items-start gap-3 shadow-2xl">
+          <div className="glass-panel border border-theme rounded-2xl p-4 flex items-start gap-3 shadow-2xl">
             <AlertTriangle className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
             <div className="text-sm text-gray-300 leading-relaxed">
               Stai per accedere a contenuti forniti da{' '}

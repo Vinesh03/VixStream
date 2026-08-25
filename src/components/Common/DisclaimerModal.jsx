@@ -13,7 +13,7 @@ const DisclaimerModal = ({ onAccept }) => {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="bg-primary-light border border-secondary rounded-2xl max-w-lg w-full p-6 md:p-8 shadow-2xl">
+      <div className="glass-panel border border-theme rounded-[var(--radius-m3)] max-w-lg w-full p-6 md:p-8 shadow-2xl">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="p-3 rounded-xl bg-accent/10">

@@ -79,7 +79,7 @@ const MediaCard = ({
               </div>
               <button
                 onClick={handleFavorite}
-                className="p-2 rounded-full bg-secondary/80 hover:bg-secondary transition-colors"
+                className="p-2 rounded-full bg-black/60 hover:bg-black/80 transition-colors"
                 aria-label={isFav ? 'Rimuovi dai preferiti' : 'Aggiungi ai preferiti'}
               >
                 <Heart 
