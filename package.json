@@ -1,7 +1,7 @@
 {
-  "name": "vixsrc-streaming-app",
+  "name": "vixstream",
   "version": "1.0.0",
-  "description": "VixSrc Streaming App - Android TV & Browser",
+  "description": "VixStream - App di streaming multi-piattaforma",
   "type": "module",
   "scripts": {
     "dev": "vite",

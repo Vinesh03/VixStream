@@ -1,4 +1,4 @@
-# VixSrc Streaming App
+# VixStream
 
 App di streaming multi-piattaforma (Android phone/tablet/TV + browser) basata su VixSrc e TMDB.
 
