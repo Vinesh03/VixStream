@@ -1,13 +1,22 @@
-import React, { useState } from 'react';
-import { Settings as SettingsIcon, Key, Trash2, Save, RefreshCw, Heart, Info } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Settings as SettingsIcon, Key, Trash2, Save, RefreshCw, Heart, Info, RotateCw } from 'lucide-react';
 import tmdbService from '../services/tmdb';
 import useStore from '../store/useStore';
+import { applyRotationSetting } from '../services/orientation';
+import { Capacitor } from '@capacitor/core';
 
 const Settings = () => {
   const { settings, updateSettings, clearAllData, resetSettings } = useStore();
   const [apiKey, setApiKey] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [saved, setSaved] = useState(false);
+  const isNative = Capacitor.isNativePlatform?.();
+
+  const handleToggleRotate = async () => {
+    const newValue = !settings.autoRotate;
+    updateSettings({ autoRotate: newValue });
+    await applyRotationSetting(newValue);
+  };
 
   const handleSaveApiKey = () => {
     if (apiKey.trim()) {
@@ -48,6 +57,39 @@ const Settings = () => {
       </div>
 
       <div className="space-y-6">
+        {/* Auto-rotazione (solo su app nativa) */}
+        {isNative && (
+          <section className="bg-primary-light rounded-card p-6 border border-secondary">
+            <div className="flex items-center gap-2 mb-4">
+              <RotateCw className="w-5 h-5 text-accent" />
+              <h2 className="text-xl font-semibold text-white">Schermo</h2>
+            </div>
+
+            <label className="flex items-center justify-between cursor-pointer select-none py-1">
+              <div>
+                <p className="text-white font-medium">Auto-rotazione</p>
+                <p className="text-gray-400 text-sm mt-0.5">
+                  Consenti la rotazione in orizzontale ruotando il telefono
+                </p>
+              </div>
+              <button
+                role="switch"
+                aria-checked={!!settings.autoRotate}
+                onClick={handleToggleRotate}
+                className={`relative w-14 h-8 rounded-full transition-colors duration-200 flex-shrink-0 ml-4 ${
+                  settings.autoRotate ? 'bg-accent' : 'bg-secondary'
+                }`}
+              >
+                <span
+                  className={`absolute top-1 left-1 w-6 h-6 rounded-full bg-white shadow transition-transform duration-200 ${
+                    settings.autoRotate ? 'translate-x-6' : ''
+                  }`}
+                />
+              </button>
+            </label>
+          </section>
+        )}
+
         {/* API Key Section */}
         <section className="bg-primary-light rounded-lg p-6 border border-secondary">
           <div className="flex items-center gap-2 mb-4">

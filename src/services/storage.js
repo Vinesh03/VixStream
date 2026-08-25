@@ -142,7 +142,8 @@ class StorageService {
       autoplay: false,
       quality: 'auto',
       subtitles: true,
-      theme: 'dark'
+      theme: 'dark',
+      autoRotate: false
     };
   }
 

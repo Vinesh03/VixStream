@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navigation/Navbar';
 import DisclaimerModal from './components/Common/DisclaimerModal';
 import AndroidBackHandler from './components/Common/AndroidBackHandler';
 import ScrollToTop from './components/Common/ScrollToTop';
 import PageTransition from './components/Common/PageTransition';
+import { applyRotationSetting } from './services/orientation';
 import Home from './pages/Home';
 import Movies from './pages/Movies';
 import TVShows from './pages/TVShows';
@@ -21,11 +22,18 @@ function App() {
     () => localStorage.getItem('vixsrc_disclaimer_accepted') !== 'true'
   );
 
+  // Applica il blocco/permesso rotazione all'avvio (default: bloccata)
+  useEffect(() => {
+    const s = JSON.parse(localStorage.getItem('vixsrc_settings') || '{}');
+    applyRotationSetting(s.autoRotate === true);
+  }, []);
+
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="min-h-screen bg-primary">
         <AndroidBackHandler />
         <ScrollToTop />
+        {/* Applica l'orientamento salvato all'avvio */}
         {showDisclaimer && (
           <DisclaimerModal onAccept={() => setShowDisclaimer(false)} />
         )}

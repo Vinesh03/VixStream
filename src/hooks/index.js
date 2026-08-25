@@ -82,25 +82,20 @@ export const useDeviceType = () => {
   });
 
   useEffect(() => {
-    const checkDevice = () => {
-      const userAgent = navigator.userAgent || '';
-      const ua = userAgent.toLowerCase();
-      const width = window.innerWidth;
-      const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
-      const isTV = /\b(tv|smarttv|googletv|bravia|aft[a-z]|shield|chromecast)\b/.test(ua);
-
-      let deviceType;
-      if (isTV) deviceType = 'androidtv';
-      else if (width >= 1024) deviceType = 'desktop';
-      else if (width >= 768) deviceType = 'tablet';
-      else deviceType = 'mobile';
-
-      setDeviceInfo({ deviceType, isTV, isTouch, width });
+    const onResize = () => setState(detect());
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onResize);
+    // doppia rilevazione: alcuni WebView emettono resize prima che il layout
+    // sia aggiornato dopo la rotazione → ricontrolla a rotazione completata
+    let t;
+    const onOrientationEnd = () => { clearTimeout(t); t = setTimeout(onResize, 250); };
+    window.addEventListener('orientationchange', onOrientationEnd);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize);
+      window.removeEventListener('orientationchange', onOrientationEnd);
+      clearTimeout(t);
     };
-
-    checkDevice();
-    window.addEventListener('resize', checkDevice);
-    return () => window.removeEventListener('resize', checkDevice);
   }, []);
 
   return deviceInfo;
