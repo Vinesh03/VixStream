@@ -33,12 +33,23 @@ const BottomTabBar = ({ pathname }) => {
   const activeIndex = TAB_ITEMS.findIndex(t => t.path === pathname);
 
   // Bolla elastica: allungamento a due fasi (stretch → collapse), stile Apple
-  const [bubble, setBubble] = useState({ index: Math.max(activeIndex, 0) });
+  const [bubble, setBubble] = useState({ index: Math.max(activeIndex, 0), hidden: activeIndex < 0 });
   const prevIndexRef = useRef(Math.max(activeIndex, 0));
   const timerRef = useRef(null);
 
   useEffect(() => {
-    if (activeIndex < 0 || activeIndex === prevIndexRef.current) return;
+    // Se la pagina corrente non è una tab (es. /settings), la bolla sfuma
+    // senza animazioni elastiche verso posizioni fantasma
+    if (activeIndex < 0) {
+      clearTimeout(timerRef.current);
+      setBubble(b => ({ ...b, hidden: true }));
+      prevIndexRef.current = Math.max(prevIndexRef.current, 0);
+      return;
+    }
+    if (activeIndex === prevIndexRef.current) {
+      setBubble(b => ({ ...b, hidden: false }));
+      return;
+    }
     const from = prevIndexRef.current;
     const to = activeIndex;
     prevIndexRef.current = to;
@@ -47,10 +58,10 @@ const BottomTabBar = ({ pathname }) => {
     // Fase 1: la bolla si ALLUNGA da "from" ad abbracciare entrambe le posizioni
     const left = Math.min(from, to);
     const span = Math.abs(to - from);
-    setBubble({ index: from, stretchLeft: left, stretchSpan: span });
+    setBubble({ index: from, stretchLeft: left, stretchSpan: span, hidden: false });
     // Fase 2: si RITIRA sulla voce di destinazione
     timerRef.current = setTimeout(() => {
-      setBubble({ index: to, stretchLeft: to, stretchSpan: span });
+      setBubble({ index: to, stretchLeft: to, stretchSpan: span, hidden: false });
     }, 140);
     return () => clearTimeout(timerRef.current);
   }, [activeIndex]);
@@ -60,7 +71,7 @@ const BottomTabBar = ({ pathname }) => {
   if (isGlass) {
     // geometria bolla: o normale, oppure in fase stretch
     let bubbleStyle;
-    if (bubble.stretchSpan != null && bubble.stretchSpan > 0) {
+    if (bubble.stretchSpan != null && bubble.stretchSpan > 0 && !bubble.hidden) {
       const isStretching = bubble.index !== activeIndex;
       const left = isStretching ? bubble.stretchLeft : activeIndex;
       const w = isStretching ? TAB_W * (bubble.stretchSpan + 1) : TAB_W;
@@ -79,7 +90,9 @@ const BottomTabBar = ({ pathname }) => {
       bubbleStyle = {
         left: `${8 + bubble.index * TAB_W}px`,
         width: `${TAB_W}px`,
-        opacity: 1,
+        opacity: bubble.hidden ? 0 : 1,
+        transform: bubble.hidden ? 'scaleY(.6)' : 'scaleY(1)',
+        transition: 'left .3s ease, opacity .25s ease, transform .25s ease, width .3s ease',
       };
     }
 
