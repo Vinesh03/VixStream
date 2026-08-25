@@ -12,6 +12,14 @@
     margin: 0;
     padding: 0;
     overflow-x: hidden;
+    overscroll-behavior-y: none;
+  }
+
+  /* Spazio per la bottom tab bar su mobile */
+  @media (max-width: 767px) {
+    body {
+      padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+    }
   }
 
   html {

@@ -56,26 +56,46 @@ export const useTVNavigation = (enabled = true) => {
   return { registerFocusable, clearFocusables };
 };
 
-// Hook for detecting device type
+// Hook for detecting device type (phone / tablet / tv)
+// Riesporta anche flag utili: isTV, isTouch, width
 export const useDeviceType = () => {
-  const [deviceType, setDeviceType] = useState('desktop');
+  const [deviceInfo, setDeviceInfo] = useState(() => {
+    const detect = () => {
+      const userAgent = navigator.userAgent || '';
+      const ua = userAgent.toLowerCase();
+      const width = window.innerWidth;
+      const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+
+      // TV: user agent con "tv" (Android TV, Google TV, Smart TV) o nessun touch + input D-pad
+      const isTV = /\b(tv|smarttv|googletv|bravia|aft[a-z]|shield|chromecast)\b/.test(ua);
+
+      let deviceType;
+      if (isTV) deviceType = 'androidtv';
+      else if (width >= 1024) deviceType = 'desktop';
+      else if (width >= 768) deviceType = 'tablet';
+      else deviceType = 'mobile';
+
+      return { deviceType, isTV, isTouch, width };
+    };
+
+    return detect();
+  });
 
   useEffect(() => {
     const checkDevice = () => {
-      const userAgent = navigator.userAgent.toLowerCase();
+      const userAgent = navigator.userAgent || '';
+      const ua = userAgent.toLowerCase();
       const width = window.innerWidth;
+      const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+      const isTV = /\b(tv|smarttv|googletv|bravia|aft[a-z]|shield|chromecast)\b/.test(ua);
 
-      if (userAgent.includes('android') && userAgent.includes('tv')) {
-        setDeviceType('androidtv');
-      } else if (userAgent.includes('android')) {
-        setDeviceType(width < 768 ? 'mobile' : 'tablet');
-      } else if (width < 768) {
-        setDeviceType('mobile');
-      } else if (width < 1024) {
-        setDeviceType('tablet');
-      } else {
-        setDeviceType('desktop');
-      }
+      let deviceType;
+      if (isTV) deviceType = 'androidtv';
+      else if (width >= 1024) deviceType = 'desktop';
+      else if (width >= 768) deviceType = 'tablet';
+      else deviceType = 'mobile';
+
+      setDeviceInfo({ deviceType, isTV, isTouch, width });
     };
 
     checkDevice();
@@ -83,7 +103,7 @@ export const useDeviceType = () => {
     return () => window.removeEventListener('resize', checkDevice);
   }, []);
 
-  return deviceType;
+  return deviceInfo;
 };
 
 // Hook for debouncing
