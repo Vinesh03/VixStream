@@ -18,6 +18,8 @@ const VideoPlayer = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [showExternalHint, setShowExternalHint] = useState(true);
+  const [streamUrl, setStreamUrl] = useState(null);
+  const [streamError, setStreamError] = useState(null);
   
   const { 
     addContinueWatching, 
@@ -70,6 +72,25 @@ const VideoPlayer = ({
     return cleanup;
   }, [tmdbId, mediaType, season, episode]);
 
+  // Ottieni stream URL fresco dal server (il token scade in ~1 minuto)
+  useEffect(() => {
+    let cancelled = false;
+    setStreamUrl(null);
+    setStreamError(null);
+
+    vixsrcService.getStreamUrl(mediaType, tmdbId, season, episode, {
+      autoplay: autoPlay,
+      ...vixsrcService.getDefaultOptions()
+    })
+      .then(url => { if (!cancelled) setStreamUrl(url); })
+      .catch(err => {
+        console.error('Stream URL error:', err);
+        if (!cancelled) setStreamError('Impossibile ottenere il flusso video. Riprova.');
+      });
+
+    return () => { cancelled = true; };
+  }, [tmdbId, mediaType, season, episode]);
+
   // Fullscreen handling
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -90,16 +111,7 @@ const VideoPlayer = ({
     }
   };
 
-  // Get stream URL
-  const streamUrl = mediaType === 'movie'
-    ? vixsrcService.getMovieStreamUrl(tmdbId, {
-        autoplay: autoPlay,
-        ...vixsrcService.getDefaultOptions()
-      })
-    : vixsrcService.getTVStreamUrl(tmdbId, season, episode, {
-        autoplay: autoPlay,
-        ...vixsrcService.getDefaultOptions()
-      });
+  // Get stream URL (ora async, gestito sopra con useEffect)
 
   return (
     <div 
@@ -150,6 +162,27 @@ const VideoPlayer = ({
       </div>
 
       {/* VixSrc Iframe Player */}
+      {streamError ? (
+        <div className="absolute inset-0 flex items-center justify-center p-8">
+          <div className="text-center max-w-md">
+            <AlertTriangle className="w-12 h-12 text-accent mx-auto mb-4" />
+            <p className="text-white text-lg mb-4">{streamError}</p>
+            <a
+              href={`https://vixsrc.to/${mediaType}/${tmdbId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn-primary inline-flex items-center gap-2"
+            >
+              <ExternalLink className="w-5 h-5" />
+              Apri su VixSrc
+            </a>
+          </div>
+        </div>
+      ) : !streamUrl ? (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-accent border-t-transparent" />
+        </div>
+      ) : (
       <iframe
         ref={iframeRef}
         src={streamUrl}
@@ -159,6 +192,7 @@ const VideoPlayer = ({
         title={`Player - ${title}`}
         sandbox="allow-scripts allow-same-origin allow-presentation allow-forms allow-popups"
       />
+      )}
 
       {/* Avviso contenuti esterni */}
       {showExternalHint && (

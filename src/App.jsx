@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navigation/Navbar';
 import DisclaimerModal from './components/Common/DisclaimerModal';
+import AndroidBackHandler from './components/Common/AndroidBackHandler';
+import ScrollToTop from './components/Common/ScrollToTop';
 import Home from './pages/Home';
 import Movies from './pages/Movies';
 import TVShows from './pages/TVShows';
@@ -21,6 +23,8 @@ function App() {
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="min-h-screen bg-primary">
+        <AndroidBackHandler />
+        <ScrollToTop />
         {showDisclaimer && (
           <DisclaimerModal onAccept={() => setShowDisclaimer(false)} />
         )}

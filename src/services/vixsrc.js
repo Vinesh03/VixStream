@@ -2,51 +2,48 @@
 const VIXSRC_BASE_URL = 'https://vixsrc.to';
 
 class VixSrcService {
-  // Get Movie Stream URL
+  // Costruisce i parametri di personalizzazione comuni
+  buildParams(options = {}) {
+    const params = new URLSearchParams();
+    if (options.primaryColor) params.append('primaryColor', options.primaryColor.replace('#', ''));
+    if (options.secondaryColor) params.append('secondaryColor', options.secondaryColor.replace('#', ''));
+    if (options.autoplay !== undefined) params.append('autoplay', options.autoplay);
+    if (options.startAt) params.append('startAt', options.startAt);
+    if (options.lang) params.append('lang', options.lang);
+    return params;
+  }
+
+  /**
+   * Ottiene l'URL embed del player con token FRESCO via API VixSrc.
+   * IMPORTANTE: i token scadono in ~60 secondi, quindi va chiamato ogni volta
+   * che si apre il player. Non cachare il risultato.
+   */
+  async getStreamUrl(mediaType, tmdbId, season, episode, options = {}) {
+    const apiPath = mediaType === 'movie'
+      ? `/api/movie/${tmdbId}`
+      : `/api/tv/${tmdbId}/${season}/${episode}`;
+
+    const lang = options.lang || 'it';
+    const res = await fetch(`${VIXSRC_BASE_URL}${apiPath}?lang=${lang}`);
+    if (!res.ok) throw new Error(`VixSrc API Error: ${res.status}`);
+    const data = await res.json();
+    if (!data.src) throw new Error('VixSrc: sorgente non disponibile');
+
+    // data.src è tipo "/embed/777603?token=...&expires=..." — aggiungiamo le nostre opzioni
+    const separator = data.src.includes('?') ? '&' : '?';
+    return `${VIXSRC_BASE_URL}${data.src}${separator}${this.buildParams(options).toString()}`;
+  }
+
+  // DEPRECATO: URL diretto senza token (l'embed restituisce 410)
   getMovieStreamUrl(tmdbId, options = {}) {
     const url = new URL(`${VIXSRC_BASE_URL}/movie/${tmdbId}`);
-    
-    // Add customization parameters
-    if (options.primaryColor) {
-      url.searchParams.append('primaryColor', options.primaryColor.replace('#', ''));
-    }
-    if (options.secondaryColor) {
-      url.searchParams.append('secondaryColor', options.secondaryColor.replace('#', ''));
-    }
-    if (options.autoplay !== undefined) {
-      url.searchParams.append('autoplay', options.autoplay);
-    }
-    if (options.startAt) {
-      url.searchParams.append('startAt', options.startAt);
-    }
-    if (options.lang) {
-      url.searchParams.append('lang', options.lang);
-    }
-    
+    for (const [k, v] of this.buildParams(options)) url.searchParams.append(k, v);
     return url.toString();
   }
 
-  // Get TV Show Episode Stream URL
   getTVStreamUrl(tmdbId, season, episode, options = {}) {
     const url = new URL(`${VIXSRC_BASE_URL}/tv/${tmdbId}/${season}/${episode}`);
-    
-    // Add customization parameters
-    if (options.primaryColor) {
-      url.searchParams.append('primaryColor', options.primaryColor.replace('#', ''));
-    }
-    if (options.secondaryColor) {
-      url.searchParams.append('secondaryColor', options.secondaryColor.replace('#', ''));
-    }
-    if (options.autoplay !== undefined) {
-      url.searchParams.append('autoplay', options.autoplay);
-    }
-    if (options.startAt) {
-      url.searchParams.append('startAt', options.startAt);
-    }
-    if (options.lang) {
-      url.searchParams.append('lang', options.lang);
-    }
-    
+    for (const [k, v] of this.buildParams(options)) url.searchParams.append(k, v);
     return url.toString();
   }
 
