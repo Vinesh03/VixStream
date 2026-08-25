@@ -90,9 +90,33 @@ export const THEMES = {
   },
 };
 
-export function applyTheme(themeId) {
+export function applyTheme(themeId, accentColor = null) {
   const theme = THEMES[themeId] || THEMES.cinema;
   const root = document.documentElement;
-  Object.entries(theme.vars).forEach(([k, v]) => root.style.setProperty(k, v));
+  Object.entries(theme.vars).forEach(([k, v]) => {
+    // Il colore accento personalizzato dell'utente sovrascrive quello del tema
+    if (accentColor && (k === '--c-accent' || k === '--c-accent-soft')) return;
+    root.style.setProperty(k, v);
+  });
+  if (accentColor) {
+    root.style.setProperty('--c-accent', accentColor);
+    root.style.setProperty('--c-accent-soft', hexToRgba(accentColor, .35));
+    // hover: versione schiarita
+    root.style.setProperty('--c-accent-hover', lighten(accentColor, .18));
+  }
   root.dataset.theme = themeId;
+}
+
+function hexToRgba(hex, a) {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+function lighten(hex, amt) {
+  const h = hex.replace('#', '');
+  const r = Math.min(255, parseInt(h.slice(0,2),16) + Math.round(255*amt));
+  const g = Math.min(255, parseInt(h.slice(2,4),16) + Math.round(255*amt));
+  const b = Math.min(255, parseInt(h.slice(4,6),16) + Math.round(255*amt));
+  return `#${((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1)}`;
 }

@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Settings as SettingsIcon, Key, Trash2, Save, RefreshCw, Heart, Info, RotateCw } from 'lucide-react';
+import { Settings as SettingsIcon, Key, Trash2, Save, RefreshCw, Heart, Info } from 'lucide-react';
 import tmdbService from '../services/tmdb';
 import useStore from '../store/useStore';
-import { applyRotationSetting } from '../services/orientation';
 import { THEMES, applyTheme } from '../services/themes';
 import { Capacitor } from '@capacitor/core';
-import { Palette } from 'lucide-react';
+import { Palette, Droplet, Pipette } from 'lucide-react';
+
+const ACCENT_COLORS = ['#ff3848', '#ff8c00', '#ffd60a', '#34c759', '#0a84ff', '#5e5ce6', '#bf5af2', '#ff2d92'];
 
 const Settings = () => {
   const { settings, updateSettings, clearAllData, resetSettings } = useStore();
@@ -13,12 +14,6 @@ const Settings = () => {
   const [showApiKey, setShowApiKey] = useState(false);
   const [saved, setSaved] = useState(false);
   const isNative = Capacitor.isNativePlatform?.();
-
-  const handleToggleRotate = async () => {
-    const newValue = !settings.autoRotate;
-    updateSettings({ autoRotate: newValue });
-    await applyRotationSetting(newValue);
-  };
 
   const handleSaveApiKey = () => {
     if (apiKey.trim()) {
@@ -59,6 +54,54 @@ const Settings = () => {
       </div>
 
       <div className="space-y-6">
+        {/* Colore accento */}
+        <section className="bg-app-light rounded-card p-6 border border-theme">
+          <div className="flex items-center gap-2 mb-4">
+            <Droplet className="w-5 h-5 text-accent" />
+            <h2 className="text-xl font-semibold text-white">Colore accento</h2>
+          </div>
+
+          <p className="text-gray-400 text-sm mb-4">
+            Personalizza il colore principale di pulsanti, evidenziazioni e barra di navigazione.
+          </p>
+
+          <div className="flex items-center gap-3 flex-wrap">
+            {ACCENT_COLORS.map(c => {
+              const active = (settings.accentColor || '#ff3848').toLowerCase() === c;
+              return (
+                <button
+                  key={c}
+                  aria-label={`Colore ${c}`}
+                  onClick={() => {
+                    updateSettings({ accentColor: c });
+                    applyTheme(settings.theme || 'cinema', c);
+                  }}
+                  className={`w-10 h-10 rounded-full transition-all duration-200 active:scale-90 ${
+                    active ? 'ring-2 ring-white ring-offset-2 ring-offset-[var(--c-bg)] scale-110' : 'hover:scale-110'
+                  }`}
+                  style={{ backgroundColor: c }}
+                />
+              );
+            })}
+            {/* Color picker libero */}
+            <label
+              className="w-10 h-10 rounded-full border-2 border-dashed border-gray-500 flex items-center justify-center cursor-pointer hover:scale-110 transition-transform"
+              title="Colore personalizzato"
+            >
+              <Pipette className="w-4 h-4 text-gray-300" />
+              <input
+                type="color"
+                value={settings.accentColor || '#ff3848'}
+                onChange={(e) => {
+                  updateSettings({ accentColor: e.target.value });
+                  applyTheme(settings.theme || 'cinema', e.target.value);
+                }}
+                className="sr-only"
+              />
+            </label>
+          </div>
+        </section>
+
         {/* Tema */}
         <section className="bg-app-light rounded-card p-6 border border-theme">
           <div className="flex items-center gap-2 mb-4">
@@ -115,39 +158,6 @@ const Settings = () => {
             })}
           </div>
         </section>
-
-        {/* Auto-rotazione (solo su app nativa) */}
-        {isNative && (
-          <section className="bg-app-light rounded-card p-6 border border-theme">
-            <div className="flex items-center gap-2 mb-4">
-              <RotateCw className="w-5 h-5 text-accent" />
-              <h2 className="text-xl font-semibold text-white">Schermo</h2>
-            </div>
-
-            <label className="flex items-center justify-between cursor-pointer select-none py-1">
-              <div>
-                <p className="text-white font-medium">Auto-rotazione</p>
-                <p className="text-gray-400 text-sm mt-0.5">
-                  Consenti la rotazione in orizzontale ruotando il telefono
-                </p>
-              </div>
-              <button
-                role="switch"
-                aria-checked={!!settings.autoRotate}
-                onClick={handleToggleRotate}
-                className={`relative w-14 h-8 rounded-full transition-colors duration-200 flex-shrink-0 ml-4 ${
-                  settings.autoRotate ? 'bg-accent' : 'bg-secondary'
-                }`}
-              >
-                <span
-                  className={`absolute top-1 left-1 w-6 h-6 rounded-full bg-white shadow transition-transform duration-200 ${
-                    settings.autoRotate ? 'translate-x-6' : ''
-                  }`}
-                />
-              </button>
-            </label>
-          </section>
-        )}
 
         {/* API Key Section */}
         <section className="bg-app-light rounded-card p-6 border border-theme">

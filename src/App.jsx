@@ -23,11 +23,10 @@ function App() {
     () => localStorage.getItem('vixsrc_disclaimer_accepted') !== 'true'
   );
 
-  // Applica tema e rotazione salvati all'avvio
+  // Applica tema e colore accento salvati all'avvio (la rotazione la decide il dispositivo)
   useEffect(() => {
     const s = JSON.parse(localStorage.getItem('vixsrc_settings') || '{}');
-    applyTheme(s.theme);
-    applyRotationSetting(s.autoRotate === true);
+    applyTheme(s.theme, s.accentColor || null);
   }, []);
 
   return (

@@ -14,6 +14,83 @@ const navItems = [
 
 // Impostazioni è accessibile dall'icona ingranaggio, non come voce principale
 
+const TAB_ITEMS = [
+  { path: '/', label: 'Home', icon: Home },
+  { path: '/movies', label: 'Film', icon: Film },
+  { path: '/tv-shows', label: 'Serie', icon: Tv },
+  { path: '/favorites', label: 'Preferiti', icon: Heart },
+  { path: '/continue-watching', label: 'Continua', icon: Clock },
+];
+
+/**
+ * Bottom tab bar mobile. Nel tema Liquid Glass diventa una pillola floating
+ * staccata dai bordi (stile Apple); negli altri temi resta la barra classica.
+ */
+const BottomTabBar = ({ pathname }) => {
+  const isGlass = document.documentElement.dataset.theme === 'glass';
+
+  if (isGlass) {
+    return (
+      <nav
+        className="fixed left-1/2 -translate-x-1/2 z-40 md:hidden"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom) + 14px)' }}
+      >
+        <div className="glass-panel border border-white/20 rounded-full shadow-2xl overflow-hidden">
+          <div className="flex items-center px-2 py-1.5 gap-1">
+            {TAB_ITEMS.map(({ path, label, icon: Icon }) => {
+              const isActive = pathname === path;
+              return (
+                <Link
+                  key={path}
+                  to={path}
+                  aria-label={label}
+                  className={`relative flex flex-col items-center justify-center w-16 h-14 rounded-full transition-all duration-300 ${
+                    isActive ? 'text-[var(--c-accent)]' : 'text-gray-300'
+                  }`}
+                >
+                  {/* Pillola animata dietro l'icona attiva */}
+                  <span
+                    className={`absolute inset-x-1 top-1 bottom-1 rounded-full bg-white/10 transition-all duration-300 ${
+                      isActive ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
+                    }`}
+                  />
+                  <Icon className={`relative w-5 h-5 transition-transform duration-300 ${isActive ? 'scale-110 -translate-y-0.5' : ''}`} />
+                  <span className={`relative text-[9px] font-medium mt-0.5 transition-all duration-300 ${isActive ? 'opacity-100' : 'opacity-70'}`}>
+                    {label}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </nav>
+    );
+  }
+
+  // Barra classica full-width per gli altri temi
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 z-40 glass-panel border-t border-theme md:hidden pb-[env(safe-area-inset-bottom)]">
+      <div className="flex items-center justify-around h-16">
+        {TAB_ITEMS.map(({ path, label, icon: Icon }) => {
+          const isActive = pathname === path;
+          return (
+            <Link
+              key={path}
+              to={path}
+              className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors ${
+                isActive ? 'text-accent' : 'text-gray-400'
+              }`}
+            >
+              <Icon className={`w-6 h-6 ${isActive ? 'scale-110' : ''} transition-transform`} />
+              <span className="text-[10px] font-medium">{label}</span>
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+  );
+};
+
 const Navbar = () => {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -48,30 +125,8 @@ const Navbar = () => {
           </div>
         </nav>
 
-        {/* Bottom tab bar mobile */}
-        <nav className="fixed bottom-0 left-0 right-0 z-40 glass-panel border-t border-theme md:hidden pb-[env(safe-area-inset-bottom)]">
-          <div className="flex items-center justify-around h-16">
-            {[{ path: '/', label: 'Home', icon: Home },
-              { path: '/movies', label: 'Film', icon: Film },
-              { path: '/tv-shows', label: 'Serie', icon: Tv },
-              { path: '/favorites', label: 'Preferiti', icon: Heart },
-              { path: '/continue-watching', label: 'Continua', icon: Clock }].map(({ path, label, icon: Icon }) => {
-              const isActive = deviceType && location.pathname === path;
-              return (
-                <Link
-                  key={path}
-                  to={path}
-                  className={`flex flex-col items-center justify-center flex-1 h-full gap-0.5 transition-colors ${
-                    isActive ? 'text-accent' : 'text-gray-400'
-                  }`}
-                >
-                  <Icon className={`w-6 h-6 ${isActive ? 'scale-110' : ''} transition-transform`} />
-                  <span className="text-[10px] font-medium">{label}</span>
-                </Link>
-              );
-            })}
-          </div>
-        </nav>
+        {/* Bottom tab bar mobile (floating pill nel tema Liquid Glass) */}
+        <BottomTabBar pathname={location.pathname} />
       </>
     );
   }

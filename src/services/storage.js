@@ -134,7 +134,12 @@ class StorageService {
   // Settings
   getSettings() {
     // merge con i default: i vecchi settings salvati senza autoRotate la ereditano (false)
-    return { ...this.getDefaultSettings(), ...(this.get(this.SETTINGS_KEY) || {}) };
+    const merged = { ...this.getDefaultSettings(), ...(this.get(this.SETTINGS_KEY) || {}) };
+    if (!this.get(this.SETTINGS_KEY)) {
+      // primo avvio: persisti subito i default così ogni chiave è esplicita
+      this.set(this.SETTINGS_KEY, merged);
+    }
+    return merged;
   }
 
   getDefaultSettings() {
@@ -144,7 +149,8 @@ class StorageService {
       quality: 'auto',
       subtitles: true,
       theme: 'dark',
-      autoRotate: false
+      autoRotate: false,
+      accentColor: '#ff3848'
     };
   }
 
