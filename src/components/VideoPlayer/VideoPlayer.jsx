@@ -20,6 +20,11 @@ const VideoPlayer = ({
   const [showExternalHint, setShowExternalHint] = useState(true);
   const [streamUrl, setStreamUrl] = useState(null);
   const [streamError, setStreamError] = useState(null);
+  const [seekTarget, setSeekTarget] = useState(null);   // % visualizzata durante il drag
+  const [seekSeconds, setSeekSeconds] = useState(null); // secondi per il prossimo seek
+  const [seekNonce, setSeekNonce] = useState(0);        // forza reload stream al seek
+  const [isDragging, setIsDragging] = useState(false);
+  const barRef = useRef(null);
   
   const { 
     addContinueWatching, 
@@ -72,16 +77,23 @@ const VideoPlayer = ({
     return cleanup;
   }, [tmdbId, mediaType, season, episode]);
 
-  // Ottieni stream URL fresco dal server (il token scade in ~1 minuto)
+  // Ottieni stream URL fresco dal server (il token scade in ~1 minuto).
+  // startAt (secondi) viene passato solo quando l'utente fa un seek manuale.
   useEffect(() => {
     let cancelled = false;
     setStreamUrl(null);
     setStreamError(null);
 
-    vixsrcService.getStreamUrl(mediaType, tmdbId, season, episode, {
-      autoplay: autoPlay,
+    const opts = {
+      autoplay: true,
       ...vixsrcService.getDefaultOptions()
-    })
+    };
+    if (seekSeconds !== null && seekSeconds !== undefined) {
+      opts.startAt = Math.floor(seekSeconds);
+      opts.autoplay = true;
+    }
+
+    vixsrcService.getStreamUrl(mediaType, tmdbId, season, episode, opts)
       .then(url => { if (!cancelled) setStreamUrl(url); })
       .catch(err => {
         console.error('Stream URL error:', err);
@@ -89,7 +101,7 @@ const VideoPlayer = ({
       });
 
     return () => { cancelled = true; };
-  }, [tmdbId, mediaType, season, episode]);
+  }, [tmdbId, mediaType, season, episode, seekNonce]);
 
   // Fullscreen handling
   useEffect(() => {
@@ -112,6 +124,31 @@ const VideoPlayer = ({
   };
 
   // Get stream URL (ora async, gestito sopra con useEffect)
+
+  // ---- Seek sulla barra del tempo ----
+  const progressPct = (() => {
+    const base = isDragging && seekSeconds !== null ? seekSeconds : currentTime;
+    if (!duration || duration <= 0) return 0;
+    return Math.min(Math.max((base / duration) * 100, 0), 100);
+  })();
+
+  const computeSeekSeconds = (e) => {
+    const rect = barRef.current?.getBoundingClientRect();
+    if (!rect || !duration) return 0;
+    const ratio = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1);
+    return ratio * duration;
+  };
+
+  const updateSeekFromEvent = (e) => {
+    setSeekTarget(computeSeekSeconds(e)); // % visiva durante il drag
+    setSeekSeconds(computeSeekSeconds(e));
+  };
+
+  const doSeek = (secs) => {
+    if (!secs && secs !== 0) return;
+    setSeekSeconds(secs);
+    setSeekNonce(n => n + 1); // ricarica il flusso con startAt=secs
+  };
 
   return (
     <div 
@@ -215,19 +252,58 @@ const VideoPlayer = ({
         </div>
       )}
 
-      {/* Progress Indicator */}
+      {/* Progress Indicator interattivo (tap o trascina per il seek) */}
       {duration > 0 && (
-        <div className="absolute bottom-0 left-0 right-0 z-10 bg-gradient-to-t from-black/80 to-transparent p-4">
+        <div className="absolute bottom-0 left-0 right-0 z-10 bg-gradient-to-t from-black/90 via-black/60 to-transparent pt-8 pb-5 px-4">
           <div className="max-w-4xl mx-auto">
             <div className="flex items-center justify-between text-sm text-white mb-2">
-              <span>{formatTime(currentTime)}</span>
-              <span>{formatTime(duration)}</span>
+              <span className="font-mono">{formatTime(seekSeconds !== null && isDragging ? seekSeconds : currentTime)}</span>
+              <span className="font-mono opacity-70">-{formatTime(Math.max(duration - (seekSeconds !== null && isDragging ? seekSeconds : currentTime), 0))}</span>
             </div>
-            <div className="h-1 bg-gray-700 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-accent transition-all duration-300"
-                style={{ width: `${Math.min((currentTime / duration) * 100, 100)}%` }}
-              />
+            <div
+              ref={barRef}
+              role="slider"
+              aria-label="Barra di avanzamento"
+              aria-valuemin={0}
+              aria-valuemax={Math.floor(duration)}
+              aria-valuenow={Math.floor(isDragging && seekSeconds !== null ? seekSeconds : currentTime)}
+              tabIndex={0}
+              className="relative h-6 flex items-center cursor-pointer touch-none select-none group"
+              onPointerDown={(e) => {
+                e.currentTarget.setPointerCapture?.(e.pointerId);
+                setIsDragging(true);
+                updateSeekFromEvent(e);
+              }}
+              onPointerMove={(e) => {
+                if (isDragging) updateSeekFromEvent(e);
+              }}
+              onPointerUp={(e) => {
+                if (!isDragging) return;
+                const secs = computeSeekSeconds(e);
+                setIsDragging(false);
+                doSeek(secs);
+              }}
+              onKeyDown={(e) => {
+                // Supporto D-pad/telecomando: left/right = ±10s
+                const base = isDragging && seekSeconds !== null ? seekSeconds : currentTime;
+                if (e.key === 'ArrowLeft') { e.preventDefault(); setSeekTarget(null); setSeekSeconds(Math.max(base - 10, 0)); setSeekNonce(n => n + 1); }
+                if (e.key === 'ArrowRight') { e.preventDefault(); setSeekTarget(null); setSeekSeconds(Math.min(base + 10, duration)); setSeekNonce(n => n + 1); }
+              }}
+            >
+              {/* Traccia */}
+              <div className="w-full h-1.5 bg-white/20 rounded-full overflow-visible relative">
+                <div
+                  className="h-full bg-accent rounded-full pointer-events-none"
+                  style={{ width: `${progressPct}%` }}
+                />
+                {/* Handle */}
+                <div
+                  className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 rounded-full bg-white shadow-lg transition-transform pointer-events-none ${
+                    isDragging ? 'w-4 h-4 scale-110' : 'w-3.5 h-3.5 group-hover:scale-125'
+                  }`}
+                  style={{ left: `${progressPct}%` }}
+                />
+              </div>
             </div>
           </div>
         </div>
