@@ -1,34 +1,39 @@
 import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { App as CapacitorApp } from '@capacitor/app';
 
 /**
- * Gestisce il pulsante/gesture "indietro" di Android dentro il WebView Capacitor:
- * pusha uno stato sentinella ad ogni navigazione e intercetta popstate,
- * così il back naviga nella storia dell'app invece di chiudere l'activity.
+ * Gestisce il pulsante/gesture "indietro" di Android dentro il WebView Capacitor
+ * usando l'evento NATIVO backButton del plugin @capacitor/app.
+ * Se c'è storia nell'app → torna indietro; se siamo alla radice → lascia chiudere.
  */
 const AndroidBackHandler = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    // Ad ogni cambio rotta, aggiungi una voce di history extra.
-    // Il primo popstate la consuma: se ne resta un'altra, navighiamo indietro;
-    // se siamo alla radice, lasciamo chiudere (comportamento nativo atteso).
-    window.history.pushState({ vixRoute: location.pathname }, '');
+    let listener;
 
-    const onPopState = () => {
-      // C'è ancora una voce sentinella? Allora torna indietro nell'app
-      if (window.history.state?.vixRoute || window.history.length > 2) {
-        navigate(-1);
-        // ri-arma la sentinella per la vista precedente
-        setTimeout(() => window.history.pushState({ vixRoute: 'back' }, ''), 0);
-      }
-      // altrimenti: nessuna sentinella → default (l'app si può chiudere)
+    const setup = async () => {
+      // Il plugin esiste solo su piattaforma nativa (Android/iOS)
+      if (!CapacitorApp?.addListener) return;
+
+      listener = await CapacitorApp.addListener('backButton', () => {
+        // Se possiamo tornare indietro nella storia dell'app, fallo;
+        // altrimenti il default chiude l'app (comportamento atteso in home).
+        if (window.history.length > 1 && window.location.pathname !== '/') {
+          navigate(-1);
+        } else if (window.location.pathname !== '/' && window.history.length <= 1) {
+          // nessuna storia ma non siamo in home: vai alla home invece di uscire
+          navigate('/');
+        }
+        // In home senza storia: non fare nulla → Capacitor chiude l'app (default)
+      });
     };
 
-    window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
-  }, [location.pathname, navigate]);
+    setup();
+    return () => { listener?.remove?.(); };
+  }, [navigate, location.pathname]);
 
   return null;
 };

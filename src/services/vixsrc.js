@@ -1,6 +1,8 @@
 // VixSrc Streaming Service
 const VIXSRC_BASE_URL = 'https://vixsrc.to';
 
+import { CapacitorHttp } from '@capacitor/core';
+
 class VixSrcService {
   // Costruisce i parametri di personalizzazione comuni
   buildParams(options = {}) {
@@ -14,6 +16,21 @@ class VixSrcService {
   }
 
   /**
+   * Fetch che funziona sia nell'app Android (CapacitorHttp nativo, bypassa CORS)
+   * sia nel browser (fetch standard).
+   */
+  async _apiGet(url) {
+    if (window.Capacitor?.isNativePlatform?.()) {
+      const res = await CapacitorHttp.get({ url, headers: { 'Accept': 'application/json' } });
+      if (res.status >= 400) throw new Error(`VixSrc API Error: ${res.status}`);
+      return typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
+    }
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`VixSrc API Error: ${res.status}`);
+    return res.json();
+  }
+
+  /**
    * Ottiene l'URL embed del player con token FRESCO via API VixSrc.
    * IMPORTANTE: i token scadono in ~60 secondi, quindi va chiamato ogni volta
    * che si apre il player. Non cachare il risultato.
@@ -24,9 +41,7 @@ class VixSrcService {
       : `/api/tv/${tmdbId}/${season}/${episode}`;
 
     const lang = options.lang || 'it';
-    const res = await fetch(`${VIXSRC_BASE_URL}${apiPath}?lang=${lang}`);
-    if (!res.ok) throw new Error(`VixSrc API Error: ${res.status}`);
-    const data = await res.json();
+    const data = await this._apiGet(`${VIXSRC_BASE_URL}${apiPath}?lang=${lang}`);
     if (!data.src) throw new Error('VixSrc: sorgente non disponibile');
 
     // data.src è tipo "/embed/777603?token=...&expires=..." — aggiungiamo le nostre opzioni
