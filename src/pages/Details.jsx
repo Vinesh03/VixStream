@@ -84,7 +84,7 @@ const Details = () => {
   return (
     <div className="min-h-screen pb-12">
       {/* Hero Section */}
-      <div className="relative h-[70vh] overflow-hidden">
+      <div className="relative min-h-[70vh] md:h-[70vh] overflow-hidden">
         <div 
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${backdropUrl})` }}
@@ -95,18 +95,19 @@ const Details = () => {
         <button
           onClick={() => navigate(-1)}
           className="absolute top-4 left-4 z-10 p-2 rounded-lg bg-black/50 hover:bg-black/70 transition-colors tv-focusable"
+          aria-label="Torna indietro"
         >
           <ArrowLeft className="w-6 h-6 text-white" />
         </button>
 
-        <div className="relative container mx-auto px-4 h-full flex items-end pb-12">
-          <div className="flex flex-col md:flex-row gap-8 w-full">
+        <div className="relative container mx-auto px-4 pt-16 pb-12 md:pt-0 md:pb-12 flex items-end">
+          <div className="flex flex-col md:flex-row gap-4 md:gap-8 w-full">
             {/* Poster */}
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 self-center md:self-auto">
               <img
                 src={posterUrl}
                 alt={title}
-                className="w-48 rounded-lg shadow-2xl"
+                className="w-32 md:w-48 rounded-lg shadow-2xl"
                 onError={(e) => {
                   e.target.src = '/placeholder.svg';
                 }}
@@ -115,11 +116,11 @@ const Details = () => {
 
             {/* Info */}
             <div className="flex-1">
-              <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              <h1 className="text-2xl md:text-5xl font-bold text-white mb-2 md:mb-4 break-words">
                 {title}
               </h1>
 
-              <div className="flex flex-wrap items-center gap-4 mb-6 text-gray-300">
+              <div className="flex flex-wrap items-center gap-2 md:gap-4 mb-4 md:mb-6 text-gray-300">
                 <div className="flex items-center gap-1">
                   <Star className="w-5 h-5 text-yellow-400 fill-current" />
                   <span className="text-lg font-semibold">{rating}</span>
@@ -138,22 +139,22 @@ const Details = () => {
                 ))}
               </div>
 
-              <div className="flex gap-4 mb-6">
+              <div className="flex flex-wrap gap-3 md:gap-4 mb-6">
                 <button
                   onClick={handlePlay}
-                  className="btn-primary flex items-center gap-2 text-lg"
+                  className="btn-primary flex items-center gap-2 text-base md:text-lg flex-1 sm:flex-none justify-center"
                 >
-                  <Play className="w-6 h-6" />
+                  <Play className="w-5 h-5 md:w-6 md:h-6" />
                   Riproduci
                 </button>
                 
                 <button
                   onClick={handleToggleFavorite}
-                  className={`btn-secondary flex items-center gap-2 ${
+                  className={`btn-secondary flex items-center gap-2 text-sm md:text-base ${
                     isFav ? 'bg-red-600 hover:bg-red-700' : ''
                   }`}
                 >
-                  <Heart className={`w-5 h-5 ${isFav ? 'fill-current' : ''}`} />
+                  <Heart className={`w-4 h-4 md:w-5 md:h-5 ${isFav ? 'fill-current' : ''}`} />
                   {isFav ? 'Rimuovi' : 'Aggiungi'}
                 </button>
               </div>

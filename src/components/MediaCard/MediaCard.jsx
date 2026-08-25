@@ -24,7 +24,8 @@ const MediaCard = ({
 
   useEffect(() => {
     if (autoFocus && cardRef.current) {
-      cardRef.current.focus();
+      // preventScroll: evita che la pagina salti fino alla card all'avvio
+      cardRef.current.focus({ preventScroll: true });
     }
   }, [autoFocus]);
 
