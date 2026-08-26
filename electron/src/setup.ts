@@ -218,16 +218,30 @@ export class ElectronCapacitorApp {
 
 // Set a CSP up for our application based on the custom scheme
 export function setupContentSecurityPolicy(customScheme: string): void {
+  // CORS bypass: le API pubbliche (TMDB, VixSrc) non accettano origin file://.
+  // Rimuoviamo l'header Origin dalle richieste in uscita e iniettiamo gli header
+  // CORS nelle risposte — approccio standard per app Electron desktop.
+  session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
+    const url = details.url;
+    if (url.startsWith('http') && !url.includes('localhost')) {
+      const headers = { ...details.requestHeaders };
+      delete headers['Origin'];
+      callback({ requestHeaders: headers });
+    } else {
+      callback({ requestHeaders: details.requestHeaders });
+    }
+  });
+
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-    callback({
-      responseHeaders: {
-        ...details.responseHeaders,
-        'Content-Security-Policy': [
-          electronIsDev
-            ? `default-src ${customScheme}://* 'unsafe-inline' devtools://* 'unsafe-eval' data:`
-            : `default-src ${customScheme}://* 'unsafe-inline' data:`,
-        ],
-      },
-    });
+    const url = details.url;
+    if (url.startsWith('http')) {
+      const responseHeaders = { ...details.responseHeaders };
+      responseHeaders['Access-Control-Allow-Origin'] = ['*'];
+      responseHeaders['Access-Control-Allow-Headers'] = ['*'];
+      responseHeaders['Access-Control-Allow-Methods'] = ['GET, POST, OPTIONS'];
+      callback({ responseHeaders });
+    } else {
+      callback({ responseHeaders: details.responseHeaders });
+    }
   });
 }

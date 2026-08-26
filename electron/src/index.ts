@@ -5,7 +5,7 @@ import { app, MenuItem } from 'electron';
 import electronIsDev from 'electron-is-dev';
 import unhandled from 'electron-unhandled';
 
-import { ElectronCapacitorApp, setupContentSecurityPolicy, setupReloadWatcher } from './setup';
+import { ElectronCapacitorApp, setupReloadWatcher } from './setup';
 
 // Graceful handling of unhandled errors.
 unhandled();
@@ -41,7 +41,7 @@ if (electronIsDev) {
   // Wait for electron app to be ready.
   await app.whenReady();
   // Security - Set Content-Security-Policy based on whether or not we are in dev mode.
-  setupContentSecurityPolicy(myCapacitorApp.getCustomURLScheme());
+  // CSP disattivato: con scheme non configurato bloccava il caricamento dei contenuti locali
   // Initialize our app, build windows, and load content.
   await myCapacitorApp.init();
   // NOTA: auto-update disattivato — la versione portable non ha app-update.yml
