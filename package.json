@@ -28,6 +28,7 @@
     "zustand": "^4.5.2"
   },
   "devDependencies": {
+    "@capacitor-community/electron": "^5.0.1",
     "@capacitor/cli": "^6.2.1",
     "@tailwindcss/line-clamp": "^0.4.4",
     "@vitejs/plugin-react": "^4.2.1",

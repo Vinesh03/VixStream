@@ -1,0 +1,20 @@
+{
+  "appId": "com.seeker86.vixstream",
+  "productName": "VixStream",
+  "directories": {
+    "buildResources": "resources"
+  },
+  "files": [
+    "assets/**/*",
+    "build/**/*",
+    "capacitor.config.*",
+    "app/**/*"
+  ],
+  "win": {
+    "target": ["portable"],
+    "icon": "assets/appIcon.ico"
+  },
+  "portable": {
+    "artifactName": "VixStream-1.0-Windows-Portable.exe"
+  }
+}
