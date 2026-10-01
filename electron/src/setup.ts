@@ -218,9 +218,11 @@ export class ElectronCapacitorApp {
 
 // Set a CSP up for our application based on the custom scheme
 export function setupContentSecurityPolicy(customScheme: string): void {
-  // CORS bypass: le API pubbliche (TMDB, VixSrc) non accettano origin file://.
-  // Rimuoviamo l'header Origin dalle richieste in uscita e iniettiamo gli header
-  // CORS nelle risposte — approccio standard per app Electron desktop.
+  // CORS bypass per le fetch dirette dal renderer (TMDB ecc):
+  // - rimuoviamo l'header Origin dalle richieste in uscita
+  // - iniettiamo Access-Control-Allow-Origin SOLO se non è già presente
+  //   nella risposta (per evitare il bug "header contains multiple values *, *"
+  //   che si verifica con Google Fonts perché Electron ha già il suo handler).
   session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
     const url = details.url;
     if (url.startsWith('http') && !url.includes('localhost')) {
@@ -234,14 +236,62 @@ export function setupContentSecurityPolicy(customScheme: string): void {
 
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     const url = details.url;
-    if (url.startsWith('http')) {
-      const responseHeaders = { ...details.responseHeaders };
-      responseHeaders['Access-Control-Allow-Origin'] = ['*'];
-      responseHeaders['Access-Control-Allow-Headers'] = ['*'];
-      responseHeaders['Access-Control-Allow-Methods'] = ['GET, POST, OPTIONS'];
-      callback({ responseHeaders });
-    } else {
+    if (!url.startsWith('http')) {
       callback({ responseHeaders: details.responseHeaders });
+      return;
     }
+    const responseHeaders = { ...details.responseHeaders };
+    // Sovrascrivi SOLO se non c'è già un Access-Control-Allow-Origin.
+    // Chiavi case-insensitive: controlliamo sia la forma canonica che lowercase.
+    const hasCorsHeader = Object.keys(responseHeaders).some(
+      (k) => k.toLowerCase() === 'access-control-allow-origin'
+    );
+    if (!hasCorsHeader) {
+      responseHeaders['Access-Control-Allow-Origin'] = ['*'];
+    }
+    callback({ responseHeaders });
+  });
+}
+
+/**
+ * IPC handler per fetch server-side: il renderer non può fare fetch verso
+ * vixsrc.to/to/ perché lo scheme capacitor-electron:// applica CORS strict
+ * e "Failed to fetch" viene lanciata prima ancora dell'invio. Usiamo
+ * net.request dal main process, che bypassa completamente il CORS perché
+ * non passa per il browser.
+ *
+ * Uso dal renderer:
+ *   const data = await window.electronAPI.vixsrcFetch(url);
+ */
+export function setupIpcHandlers(): void {
+  const { ipcMain, net } = require('electron');
+
+  ipcMain.handle('vixsrc-fetch', async (_event: any, url: string) => {
+    return new Promise((resolve, reject) => {
+      const req = net.request({ method: 'GET', url, redirect: 'follow' });
+      req.setHeader('Accept', 'application/json');
+      req.setHeader('User-Agent', 'VixStream/1.0');
+      let body = '';
+      let statusCode = 0;
+      req.on('response', (response: any) => {
+        statusCode = response.statusCode;
+        response.on('data', (chunk: Buffer) => { body += chunk.toString(); });
+        response.on('end', () => {
+          if (statusCode >= 400) {
+            reject(new Error(`VixSrc API Error: ${statusCode} - ${body.slice(0, 200)}`));
+          } else {
+            try {
+              resolve(JSON.parse(body));
+            } catch (e) {
+              reject(new Error(`VixSrc API: risposta non JSON - ${body.slice(0, 200)}`));
+            }
+          }
+        });
+      });
+      req.on('error', (err: Error) => {
+        reject(new Error(`VixSrc API network error: ${err.message}`));
+      });
+      req.end();
+    });
   });
 }

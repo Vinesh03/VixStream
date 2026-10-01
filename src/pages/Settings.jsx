@@ -131,9 +131,7 @@ const Settings = () => {
                     className="h-10 rounded-xl mb-2 relative overflow-hidden"
                     style={{
                       background:
-                        id === 'glass'
-                          ? 'linear-gradient(135deg,#1e2a4a 0%,#0a84ff33 60%),#0d0d12'
-                          : id === 'amoled'
+                        id === 'amoled'
                           ? '#000'
                           : id === 'oneui'
                           ? '#010101'
@@ -144,13 +142,7 @@ const Settings = () => {
                       className="absolute bottom-1.5 left-1.5 w-6 h-6 rounded-md"
                       style={{ backgroundColor: theme.vars['--c-accent'] }}
                     />
-                    {id === 'glass' && (
-                      <span
-                        className="absolute top-1.5 right-1.5 left-8 bottom-6 rounded-md"
-                        style={{ background: 'rgba(255,255,255,.12)', backdropFilter: 'blur(2px)' }}
-                      />
-                    )}
-                  </div>
+                                      </div>
                   <p className="text-sm font-medium text-white leading-tight">{theme.label}</p>
                   <p className="text-xs text-gray-400 mt-0.5">{active ? 'In uso' : theme.hint}</p>
                 </button>

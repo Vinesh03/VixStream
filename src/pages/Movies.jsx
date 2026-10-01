@@ -5,6 +5,7 @@ import MediaGrid from '../components/MediaGrid/MediaGrid';
 import Loading from '../components/Common/Loading';
 import ErrorMessage from '../components/Common/ErrorMessage';
 import useStore from '../store/useStore';
+import { useInfiniteScroll } from '../hooks';
 
 const Movies = () => {
   const [movies, setMovies] = useState([]);
@@ -67,6 +68,9 @@ const Movies = () => {
       loadMovies(page + 1);
     }
   };
+
+  // Infinite scroll: carica la pagina successiva avvicinandosi al fondo
+  const sentinelRef = useInfiniteScroll({ onLoadMore: loadMore, hasMore, loading });
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 50 }, (_, i) => currentYear - i);
@@ -163,16 +167,7 @@ const Movies = () => {
         <>
           <MediaGrid items={movies} mediaType="movie" loading={loading && page === 1} />
           
-          {hasMore && !loading && movies.length > 0 && (
-            <div className="text-center mt-8">
-              <button
-                onClick={loadMore}
-                className="btn-primary"
-              >
-                Carica altri
-              </button>
-            </div>
-          )}
+          <div ref={sentinelRef} className="h-1" />
           
           {loading && page > 1 && (
             <Loading text="Caricamento..." />

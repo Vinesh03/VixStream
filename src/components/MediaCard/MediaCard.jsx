@@ -20,7 +20,7 @@ const MediaCard = ({
   const releaseDate = item.release_date || item.first_air_date;
   const year = releaseDate ? new Date(releaseDate).getFullYear() : '';
   const rating = item.vote_average ? item.vote_average.toFixed(1) : 'N/A';
-  const posterUrl = tmdbService.getImageUrl(item.poster_path, 'w500');
+  const posterUrl = tmdbService.getImageUrl(item.poster_path, 'w342');
   const isFav = isFavorite(item.id, mediaType);
 
   useEffect(() => {

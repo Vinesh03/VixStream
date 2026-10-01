@@ -58,31 +58,30 @@ export const useTVNavigation = (enabled = true) => {
 
 // Hook for detecting device type (phone / tablet / tv)
 // Riesporta anche flag utili: isTV, isTouch, width
+const detectDevice = () => {
+  const userAgent = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
+  const ua = userAgent.toLowerCase();
+  const width = (typeof window !== 'undefined') ? window.innerWidth : 1024;
+  const isTouch = (typeof window !== 'undefined') &&
+    (('ontouchstart' in window) || (navigator.maxTouchPoints > 0));
+
+  // TV: user agent con "tv" (Android TV, Google TV, Smart TV) o nessun touch + input D-pad
+  const isTV = /\b(tv|smarttv|googletv|bravia|aft[a-z]|shield|chromecast)\b/.test(ua);
+
+  let deviceType;
+  if (isTV) deviceType = 'androidtv';
+  else if (width >= 1024) deviceType = 'desktop';
+  else if (width >= 768) deviceType = 'tablet';
+  else deviceType = 'mobile';
+
+  return { deviceType, isTV, isTouch, width };
+};
+
 export const useDeviceType = () => {
-  const [deviceInfo, setDeviceInfo] = useState(() => {
-    const detect = () => {
-      const userAgent = navigator.userAgent || '';
-      const ua = userAgent.toLowerCase();
-      const width = window.innerWidth;
-      const isTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
-
-      // TV: user agent con "tv" (Android TV, Google TV, Smart TV) o nessun touch + input D-pad
-      const isTV = /\b(tv|smarttv|googletv|bravia|aft[a-z]|shield|chromecast)\b/.test(ua);
-
-      let deviceType;
-      if (isTV) deviceType = 'androidtv';
-      else if (width >= 1024) deviceType = 'desktop';
-      else if (width >= 768) deviceType = 'tablet';
-      else deviceType = 'mobile';
-
-      return { deviceType, isTV, isTouch, width };
-    };
-
-    return detect();
-  });
+  const [deviceInfo, setDeviceInfo] = useState(() => detectDevice());
 
   useEffect(() => {
-    const onResize = () => setDeviceInfo(detect());
+    const onResize = () => setDeviceInfo(detectDevice());
     window.addEventListener('resize', onResize);
     window.addEventListener('orientationchange', onResize);
     // doppia rilevazione: alcuni WebView emettono resize prima che il layout
@@ -163,3 +162,4 @@ export const useLocalStorage = (key, initialValue) => {
 
   return [storedValue, setValue];
 };
+export { useInfiniteScroll } from './useInfiniteScroll';

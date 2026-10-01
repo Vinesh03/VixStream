@@ -70,7 +70,7 @@ const Home = () => {
             <div 
               className="absolute inset-0 bg-cover bg-center opacity-30"
               style={{
-                backgroundImage: `url(${tmdbService.getImageUrl(trendingMovies[0].backdrop_path, 'original')})`
+                backgroundImage: `url(${tmdbService.getImageUrl(trendingMovies[0].backdrop_path, 'w780')})`
               }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/50 to-transparent" />

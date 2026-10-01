@@ -25,27 +25,6 @@ export const THEMES = {
       '--radius-m3': '28px',
     },
   },
-  glass: {
-    label: 'Liquid Glass',
-    hint: 'Stile Apple: superfici traslucide e sfumate',
-    vars: {
-      '--c-bg': '#0d0d12',
-      '--c-bg-light': 'rgba(30,30,40,.55)',
-      '--c-bg-dark': '#07070a',
-      '--c-surface': 'rgba(40,40,55,.45)',
-      '--c-surface-variant': 'rgba(60,60,80,.4)',
-      '--c-secondary': 'rgba(70,70,95,.5)',
-      '--c-secondary-light': 'rgba(90,90,120,.55)',
-      '--c-accent': '#0a84ff',
-      '--c-accent-hover': '#409cff',
-      '--c-accent-soft': 'rgba(10,132,255,.3)',
-      '--c-border': 'rgba(255,255,255,.16)',
-      '--glass-blur': '24px',
-      '--glass-bg': 'rgba(30,30,42,.6)',
-      '--radius-card': '22px',
-      '--radius-m3': '30px',
-    },
-  },
   oneui: {
     label: 'One UI',
     hint: 'Stile Samsung: superfici chiare su dark profondo',
@@ -91,6 +70,7 @@ export const THEMES = {
 };
 
 export function applyTheme(themeId, accentColor = null) {
+  // Fallback al tema di default se il tema richiesto non esiste più (es. 'glass' rimosso)
   const theme = THEMES[themeId] || THEMES.cinema;
   const root = document.documentElement;
   Object.entries(theme.vars).forEach(([k, v]) => {
@@ -104,7 +84,7 @@ export function applyTheme(themeId, accentColor = null) {
     // hover: versione schiarita
     root.style.setProperty('--c-accent-hover', lighten(accentColor, .18));
   }
-  root.dataset.theme = themeId;
+  root.dataset.theme = THEMES[themeId] ? themeId : 'cinema';
 }
 
 function hexToRgba(hex, a) {

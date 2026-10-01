@@ -3,7 +3,7 @@ import { Search as SearchIcon, X } from 'lucide-react';
 import tmdbService from '../services/tmdb';
 import MediaGrid from '../components/MediaGrid/MediaGrid';
 import Loading from '../components/Common/Loading';
-import { useDebounce } from '../hooks';
+import { useDebounce, useInfiniteScroll } from '../hooks';
 import useStore from '../store/useStore';
 
 const Search = () => {
@@ -11,33 +11,48 @@ const Search = () => {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('movie');
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
   
   const debouncedQuery = useDebounce(query, 500);
 
   useEffect(() => {
     if (debouncedQuery.trim()) {
-      performSearch(debouncedQuery);
+      performSearch(debouncedQuery, 1);
     } else {
       setResults([]);
+      setHasMore(false);
     }
   }, [debouncedQuery, activeTab]);
 
-  const performSearch = async (searchQuery) => {
+  const performSearch = async (searchQuery, pageNum = 1) => {
     try {
       setLoading(true);
-      
+
       const searchResults = activeTab === 'movie'
-        ? await tmdbService.searchMovies(searchQuery)
-        : await tmdbService.searchTVShows(searchQuery);
-      
-      setResults(searchResults.results || []);
+        ? await tmdbService.searchMovies(searchQuery, pageNum)
+        : await tmdbService.searchTVShows(searchQuery, pageNum);
+
+      const newResults = searchResults.results || [];
+      if (pageNum === 1) setResults(newResults);
+      else setResults(prev => [...prev, ...newResults.filter(n => !prev.some(p => p.id === n.id))]);
+      setPage(pageNum);
+      setHasMore(pageNum < (searchResults.total_pages || 1));
     } catch (error) {
       console.error('Search error:', error);
-      setResults([]);
+      if (pageNum === 1) setResults([]);
     } finally {
       setLoading(false);
     }
   };
+
+  const loadMore = () => {
+    if (!loading && hasMore && debouncedQuery.trim()) {
+      performSearch(debouncedQuery, page + 1);
+    }
+  };
+
+  const sentinelRef = useInfiniteScroll({ onLoadMore: loadMore, hasMore, loading });
 
   const clearSearch = () => {
     setQuery('');
@@ -106,6 +121,7 @@ const Search = () => {
               {results.length} risultat{results.length !== 1 ? 'i' : 'o'} per "{query}"
             </p>
             <MediaGrid items={results} mediaType={activeTab} />
+            <div ref={sentinelRef} className="h-1" />
           </>
         ) : query.trim() ? (
           <div className="text-center py-12">

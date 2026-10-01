@@ -204,10 +204,6 @@
 .from-primary-dark { --tw-gradient-from: var(--c-bg-dark); }
 .via-primary { --tw-gradient-via: var(--c-bg); }
 
-/* Tema Liquid Glass: navbar floating pill → serve più spazio sotto */
-:root[data-theme="glass"] body {
-  padding-bottom: calc(6rem + env(safe-area-inset-bottom));
-}
 
 /* Campi input e dropdown coerenti col tema (fix bianco su bianco) */
 .input-field {

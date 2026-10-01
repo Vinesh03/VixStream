@@ -5,7 +5,7 @@ import { app, MenuItem } from 'electron';
 import electronIsDev from 'electron-is-dev';
 import unhandled from 'electron-unhandled';
 
-import { ElectronCapacitorApp, setupReloadWatcher } from './setup';
+import { ElectronCapacitorApp, setupReloadWatcher, setupContentSecurityPolicy, setupIpcHandlers } from './setup';
 
 // Graceful handling of unhandled errors.
 unhandled();
@@ -40,10 +40,33 @@ if (electronIsDev) {
 (async () => {
   // Wait for electron app to be ready.
   await app.whenReady();
+  console.log('[BOOT] app ready, initializing...');
   // Security - Set Content-Security-Policy based on whether or not we are in dev mode.
   // CSP disattivato: con scheme non configurato bloccava il caricamento dei contenuti locali
   // Initialize our app, build windows, and load content.
-  await myCapacitorApp.init();
+  try {
+    await myCapacitorApp.init();
+    console.log('[BOOT] myCapacitorApp.init() done');
+  } catch (e) {
+    console.error('[BOOT] init() failed:', e);
+  }
+  // FIX: setupContentSecurityPolicy inietta header CORS (Access-Control-Allow-Origin: *)
+  // nelle risposte e rimuove Origin dalle richieste in uscita. Senza questo, le fetch da
+  // electron a vixsrc.to/api/* e il caricamento dell'iframe vixsrc.to/embed/* falliscono
+  // silenziosamente perché lo scheme capacitor-electron:// non è un Origin valido.
+  try {
+    setupContentSecurityPolicy(capacitorFileConfig.electron?.customUrlScheme ?? 'vixstream');
+    console.log('[BOOT] setupContentSecurityPolicy done');
+  } catch (e) {
+    console.error('[BOOT] setupContentSecurityPolicy failed:', e);
+  }
+  // FIX: handler IPC per fetch server-side (net.request bypassa CORS strict del renderer)
+  try {
+    setupIpcHandlers();
+    console.log('[BOOT] setupIpcHandlers done');
+  } catch (e) {
+    console.error('[BOOT] setupIpcHandlers failed:', e);
+  }
   // NOTA: auto-update disattivato — la versione portable non ha app-update.yml
   // e gli aggiornamenti vengono distribuiti manualmente via GitHub Releases.
 })();

@@ -172,8 +172,8 @@ const Details = () => {
   const year = releaseDate ? new Date(releaseDate).getFullYear() : '';
   const rating = details.vote_average ? details.vote_average.toFixed(1) : 'N/A';
   const runtime = details.runtime || details.episode_run_time?.[0];
-  const backdropUrl = tmdbService.getImageUrl(details.backdrop_path, 'original');
-  const posterUrl = tmdbService.getImageUrl(details.poster_path, 'w500');
+  const backdropUrl = tmdbService.getImageUrl(details.backdrop_path, 'w780');
+  const posterUrl = tmdbService.getImageUrl(details.poster_path, 'w342');
 
   // Episodio corrente in corso (per evidenziarlo nella lista)
   const currentEp = (watchEntry && selectedSeason &&
@@ -192,13 +192,13 @@ const Details = () => {
         {/* Back Button */}
         <button
           onClick={() => navigate(-1)}
-          className="absolute top-4 left-4 z-10 p-2 rounded-lg bg-black/50 hover:bg-black/70 transition-colors tv-focusable"
+          className="absolute top-4 left-4 z-20 p-2 rounded-lg bg-black/50 hover:bg-black/70 transition-colors tv-focusable"
           aria-label="Torna indietro"
         >
           <ArrowLeft className="w-6 h-6 text-white" />
         </button>
 
-        <div className="relative container mx-auto px-4 pt-16 pb-12 md:pt-0 md:pb-12 flex items-end">
+        <div className="relative container mx-auto px-4 py-20 md:py-12 flex items-center min-h-[70vh]">
           <div className="flex flex-col md:flex-row gap-4 md:gap-8 w-full">
             {/* Poster */}
             <div className="flex-shrink-0 self-center md:self-auto">

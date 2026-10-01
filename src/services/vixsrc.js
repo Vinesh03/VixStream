@@ -16,17 +16,52 @@ class VixSrcService {
   }
 
   /**
-   * Fetch che funziona sia nell'app Android (CapacitorHttp nativo, bypassa CORS)
-   * sia nel browser (fetch standard).
+   * Fetch che funziona:
+   * - su Android nativo: CapacitorHttp (bypassa CORS)
+   * - su Electron: net.request via IPC (bypassa CORS strict del renderer)
+   * - su browser: fetch standard
+   *
+   * NOTA: la fetch del renderer su Electron fallisce con "Failed to fetch" perché
+   * lo scheme capacitor-electron:// applica CORS strict sul cross-origin. Su
+   * Electron usiamo invece l'IPC esposto dal preload (window.electronAPI.vixsrcFetch)
+   * che chiama net.request dal main process.
    */
   async _apiGet(url) {
-    if (window.Capacitor?.isNativePlatform?.()) {
+    const isElectron = !!(window.CapacitorCustomPlatform?.name === 'electron'
+      || (typeof navigator !== 'undefined' && /Electron/.test(navigator.userAgent)));
+    const isNative = !isElectron && !!window.Capacitor?.isNativePlatform?.();
+
+    console.log('[VixSrc] Fetching:', url, 'isElectron=', isElectron, 'isNative=', isNative);
+
+    // Electron: usa IPC server-side (bypassa CORS)
+    if (isElectron && window.electronAPI?.vixsrcFetch) {
+      try {
+        const data = await window.electronAPI.vixsrcFetch(url);
+        console.log('[VixSrc] IPC response OK');
+        return data;
+      } catch (e) {
+        console.error('[VixSrc] IPC fetch error:', e);
+        throw e;
+      }
+    }
+
+    // Android nativo: CapacitorHttp
+    if (isNative) {
       const res = await CapacitorHttp.get({ url, headers: { 'Accept': 'application/json' } });
       if (res.status >= 400) throw new Error(`VixSrc API Error: ${res.status}`);
       return typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
     }
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`VixSrc API Error: ${res.status}`);
+
+    // Browser: fetch standard
+    const res = await fetch(url, {
+      headers: { 'Accept': 'application/json' },
+      credentials: 'omit'
+    });
+    console.log('[VixSrc] Response status:', res.status, res.statusText);
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`VixSrc API Error: ${res.status} ${res.statusText} - ${body.slice(0, 200)}`);
+    }
     return res.json();
   }
 

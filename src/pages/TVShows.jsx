@@ -5,6 +5,7 @@ import MediaGrid from '../components/MediaGrid/MediaGrid';
 import Loading from '../components/Common/Loading';
 import ErrorMessage from '../components/Common/ErrorMessage';
 import useStore from '../store/useStore';
+import { useInfiniteScroll } from '../hooks';
 
 const TVShows = () => {
   const [tvShows, setTvShows] = useState([]);
@@ -67,6 +68,9 @@ const TVShows = () => {
       loadTVShows(page + 1);
     }
   };
+
+  // Infinite scroll: carica la pagina successiva avvicinandosi al fondo
+  const sentinelRef = useInfiniteScroll({ onLoadMore: loadMore, hasMore, loading });
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 50 }, (_, i) => currentYear - i);

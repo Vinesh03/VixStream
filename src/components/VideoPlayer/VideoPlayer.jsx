@@ -4,8 +4,8 @@ import vixsrcService from '../../services/vixsrc';
 import tmdbService from '../../services/tmdb';
 import useStore from '../../store/useStore';
 
-const VideoPlayer = ({ 
-  tmdbId, 
+const VideoPlayer = ({
+  tmdbId,
   mediaType = 'movie',
   season = null,
   episode = null,
@@ -21,6 +21,7 @@ const VideoPlayer = ({
   const [showExternalHint, setShowExternalHint] = useState(true);
   const [streamUrl, setStreamUrl] = useState(null);
   const [streamError, setStreamError] = useState(null);
+  const [streamDebug, setStreamDebug] = useState(null);
   const detailsRef = useRef(null);
   
   const { 
@@ -101,10 +102,27 @@ const VideoPlayer = ({
     };
 
     vixsrcService.getStreamUrl(mediaType, tmdbId, season, episode, opts)
-      .then(url => { if (!cancelled) setStreamUrl(url); })
+      .then(url => {
+        console.log('[Player] Stream URL OK:', url?.slice(0, 120));
+        if (!cancelled) setStreamUrl(url);
+      })
       .catch(err => {
-        console.error('Stream URL error:', err);
-        if (!cancelled) setStreamError('Impossibile ottenere il flusso video. Riprova.');
+        console.error('[Player] Stream URL error:', err);
+        console.error('[Player] Error message:', err?.message);
+        console.error('[Player] Error stack:', err?.stack);
+        const msg = err?.message || err?.toString() || 'Errore sconosciuto';
+        if (!cancelled) {
+          setStreamError(`Impossibile ottenere il flusso video: ${msg}`);
+          setStreamDebug({
+            type: err?.name || 'Error',
+            message: msg,
+            stack: err?.stack || '',
+            url: `https://vixsrc.to/api/${mediaType}/${tmdbId}${mediaType === 'tv' ? `/${season}/${episode}` : ''}?lang=it`,
+            isElectron: !!(window.CapacitorCustomPlatform?.name === 'electron' || /Electron/.test(navigator.userAgent || '')),
+            userAgent: navigator.userAgent,
+            timestamp: new Date().toISOString()
+          });
+        }
       });
 
     return () => { cancelled = true; };
@@ -182,10 +200,25 @@ const VideoPlayer = ({
 
       {/* VixSrc Iframe Player */}
       {streamError ? (
-        <div className="absolute inset-0 flex items-center justify-center p-8">
-          <div className="text-center max-w-md">
+        <div className="absolute inset-0 flex items-center justify-center p-8 overflow-y-auto">
+          <div className="text-center max-w-2xl w-full">
             <AlertTriangle className="w-12 h-12 text-accent mx-auto mb-4" />
             <p className="text-white text-lg mb-4">{streamError}</p>
+            {streamDebug && (
+              <details className="text-left bg-black/70 border border-white/10 rounded-lg p-3 mb-4 text-xs font-mono text-gray-300 max-h-60 overflow-y-auto">
+                <summary className="cursor-pointer text-accent mb-2 font-sans text-sm">
+                  Dettagli tecnici (clicca per espandere)
+                </summary>
+                <div className="space-y-1 break-all">
+                  <div><b>Tipo errore:</b> {streamDebug.type}</div>
+                  <div><b>URL chiamato:</b> {streamDebug.url}</div>
+                  <div><b>Electron:</b> {String(streamDebug.isElectron)}</div>
+                  <div><b>User-Agent:</b> {streamDebug.userAgent}</div>
+                  <div><b>Timestamp:</b> {streamDebug.timestamp}</div>
+                  <div className="mt-2"><b>Stack:</b><pre className="whitespace-pre-wrap text-red-300">{streamDebug.stack}</pre></div>
+                </div>
+              </details>
+            )}
             <a
               href={`https://vixsrc.to/${mediaType}/${tmdbId}`}
               target="_blank"
