@@ -45,3 +45,6 @@ ios/
 *.keystore
 *.jks
 vixsrc-keystore-password.txt
+
+# Build APK (MAI nel repo: solo nelle GitHub Releases firmate; debug mai pubblicato)
+*.apk
