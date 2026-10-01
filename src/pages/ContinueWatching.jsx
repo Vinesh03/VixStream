@@ -16,7 +16,7 @@ const ContinueWatching = () => {
     <div className="container mx-auto px-4 py-8 min-h-screen">
       <div className="flex items-center gap-3 mb-8">
         <Clock className="w-8 h-8 text-accent" />
-        <h1 className="text-3xl font-bold text-white">Continua a guardare</h1>
+        <h1 className="text-2xl font-bold text-white">Continua a guardare</h1>
       </div>
 
       {continueWatching.length > 0 ? (

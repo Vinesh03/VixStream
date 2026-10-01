@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import pkg from '../../package.json';
 import { Settings as SettingsIcon, Key, Trash2, Save, RefreshCw, Heart, Info } from 'lucide-react';
 import tmdbService from '../services/tmdb';
 import useStore from '../store/useStore';
@@ -50,7 +51,7 @@ const Settings = () => {
     <div className="container mx-auto px-4 py-8 min-h-screen max-w-4xl">
       <div className="flex items-center gap-3 mb-8">
         <SettingsIcon className="w-8 h-8 text-accent" />
-        <h1 className="text-3xl font-bold text-white">Impostazioni</h1>
+        <h1 className="text-2xl font-bold text-white">Impostazioni</h1>
       </div>
 
       <div className="space-y-6">
@@ -177,7 +178,7 @@ const Settings = () => {
                     type="checkbox"
                     checked={showApiKey}
                     onChange={(e) => setShowApiKey(e.target.checked)}
-                    className="rounded"
+                    className="rounded w-[18px] h-[18px] accent-[var(--c-accent)]"
                   />
                   Mostra API key
                 </label>
@@ -315,8 +316,8 @@ const Settings = () => {
           <h2 className="text-xl font-semibold text-white mb-4">Informazioni</h2>
           
           <div className="space-y-2 text-sm text-gray-400">
-            <p>VixSrc Streaming App</p>
-            <p>Versione 1.0.0</p>
+            <p>VixStream</p>
+            <p>Versione {pkg.version}</p>
             <p className="flex items-center gap-2 pt-4 border-t border-theme mt-4">
               <Heart className="w-4 h-4 text-accent fill-accent" />
               <span>Fatto con <span className="text-accent font-semibold">vibecoding</span> e amore da <span className="text-white font-semibold">SheetSeeker1486</span></span>

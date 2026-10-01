@@ -1,6 +1,6 @@
 {
   "name": "vixstream",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "VixStream - App di streaming multi-piattaforma",
   "type": "module",
   "scripts": {

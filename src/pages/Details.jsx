@@ -394,7 +394,7 @@ const Details = () => {
         {/* Similar Content */}
         {details.similar?.results?.length > 0 && (
           <section>
-            <h2 className="text-2xl font-bold text-white mb-6">Contenuti simili</h2>
+            <h2 className="text-lg font-semibold text-white mb-5">Contenuti simili</h2>
             <MediaGrid
               items={details.similar.results.slice(0, 12)}
               mediaType={mediaType}
@@ -405,7 +405,7 @@ const Details = () => {
         {/* Recommendations */}
         {details.recommendations?.results?.length > 0 && (
           <section>
-            <h2 className="text-2xl font-bold text-white mb-6">Consigliati per te</h2>
+            <h2 className="text-lg font-semibold text-white mb-5">Consigliati per te</h2>
             <MediaGrid
               items={details.recommendations.results.slice(0, 12)}
               mediaType={mediaType}

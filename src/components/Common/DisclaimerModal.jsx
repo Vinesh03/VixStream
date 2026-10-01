@@ -27,7 +27,7 @@ const DisclaimerModal = ({ onAccept }) => {
           <p>
             Questa app è un <strong className="text-white">semplice catalogo/interfaccia</strong> che
             si appoggia a servizi di terze parti (<span className="text-white">TMDB</span> per i dati
-            e <span className="text-white">VixSrc</span> per la riproduzione).
+            e <span className="text-white">VixStream</span> per la riproduzione).
           </p>
           <p>
             I contenuti video sono forniti e gestiti interamente da VixSrc:{' '}

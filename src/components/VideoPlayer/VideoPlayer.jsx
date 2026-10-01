@@ -252,7 +252,7 @@ const VideoPlayer = ({
             <AlertTriangle className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
             <div className="text-sm text-gray-300 leading-relaxed">
               Stai per accedere a contenuti forniti da{' '}
-              <strong className="text-white">VixSrc</strong>, servizio di terze parti non
+              <strong className="text-white">VixStream</strong>, servizio di terze parti non
               gestito da noi. Se qualcosa non funziona, usa il pulsante{' '}
               <ExternalLink className="w-3.5 h-3.5 inline" /> in alto per aprire il player
               in una nuova finestra.

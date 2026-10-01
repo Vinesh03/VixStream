@@ -64,20 +64,20 @@ const Navbar = () => {
         {/* Header compatto mobile */}
         <nav className="glass-panel border-b border-theme sticky top-0 z-40 md:hidden">
           <div className="flex items-center justify-between h-14 px-4">
-            <Link to="/" className="text-xl font-bold text-accent">
-              VixSrc
+            <Link to="/" className="text-xl font-bold text-accent py-2">
+              VixStream
             </Link>
             <div className="flex items-center gap-1">
               <Link
                 to="/search"
-                className={`p-2 rounded-lg ${location.pathname === '/search' ? 'bg-accent text-white' : 'text-gray-300'}`}
+                className={`p-2.5 rounded-lg ${location.pathname === '/search' ? 'bg-accent text-white' : 'text-gray-300'}`}
                 aria-label="Cerca"
               >
                 <Search className="w-5 h-5" />
               </Link>
               <Link
                 to="/settings"
-                className={`p-2 rounded-lg ${location.pathname === '/settings' ? 'bg-accent text-white' : 'text-gray-300'}`}
+                className={`p-2.5 rounded-lg ${location.pathname === '/settings' ? 'bg-accent text-white' : 'text-gray-300'}`}
                 aria-label="Impostazioni"
               >
                 <Settings className="w-5 h-5" />
@@ -104,7 +104,7 @@ const Navbar = () => {
               deviceType === 'androidtv' || isTV ? 'text-3xl' : 'text-2xl'
             }`}
           >
-            VixSrc
+            VixStream
           </Link>
 
           {/* Desktop / Tablet / TV Navigation */}

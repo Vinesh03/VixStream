@@ -62,7 +62,7 @@ const Search = () => {
   return (
     <div className="container mx-auto px-4 py-8 min-h-screen">
       <div className="max-w-4xl mx-auto mb-8">
-        <h1 className="text-3xl font-bold text-white mb-6">Cerca</h1>
+        <h1 className="text-lg font-semibold text-white mb-5">Cerca</h1>
         
         {/* Search Input */}
         <div className="relative">

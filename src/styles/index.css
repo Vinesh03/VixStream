@@ -27,6 +27,7 @@
   }
 
   html {
+    font-size: 15px; /* base più compatta: tutte le misure rem (testi, spazi) scalano insieme */
     scroll-behavior: smooth;
   }
 

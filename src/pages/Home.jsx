@@ -77,8 +77,8 @@ const Home = () => {
             
             <div className="relative container mx-auto px-4 h-full flex items-end pb-12">
               <div className="max-w-2xl w-full">
-                <h1 className="text-3xl md:text-5xl font-bold text-white mb-4 break-words">
-                  Benvenuto su VixSrc
+                <h1 className="text-2xl md:text-5xl font-bold text-white mb-4 break-words">
+                  Benvenuto su VixStream
                 </h1>
                 <p className="text-lg md:text-xl text-gray-200 mb-6">
                   Scopri migliaia di film e serie TV in streaming
