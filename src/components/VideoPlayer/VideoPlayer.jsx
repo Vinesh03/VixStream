@@ -238,7 +238,6 @@ const VideoPlayer = ({
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold text-white truncate max-w-md">
             {title}
-            {season && episode && ` - S${season}E${episode}`}
           </h2>
           
           <div className="flex items-center gap-2">
