@@ -20,7 +20,8 @@ const Favorites = () => {
           </p>
           <MediaGrid 
             items={favorites} 
-            mediaType="movie" // Will be overridden by item's media_type
+            mediaType="movie" 
+            mediaTypeOverride // usa item.media_type: le serie TV NON si aprono come film
           />
         </>
       ) : (

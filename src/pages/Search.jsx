@@ -7,19 +7,24 @@ import { useDebounce, useInfiniteScroll } from '../hooks';
 import useStore from '../store/useStore';
 
 const Search = () => {
-  const [query, setQuery] = useState('');
+  // Stato persiste in sessionStorage: tornando dai dettagli la ricerca è ancora lì
+  const [query, setQuery] = useState(() => sessionStorage.getItem('vixsrc.q') || '');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('movie');
+  const [activeTab, setActiveTab] = useState(() => sessionStorage.getItem('vixsrc.tab') || 'movie');
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
-  
   const debouncedQuery = useDebounce(query, 500);
 
   useEffect(() => {
     if (debouncedQuery.trim()) {
+      sessionStorage.setItem('vixsrc.q', debouncedQuery);
+      sessionStorage.setItem('vixsrc.tab', activeTab);
+      setResults([]);       // svuota SUBITO: niente risultati della tab precedente in griglia
+      setHasMore(false);
       performSearch(debouncedQuery, 1);
     } else {
+      sessionStorage.removeItem('vixsrc.q');
       setResults([]);
       setHasMore(false);
     }

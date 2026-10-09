@@ -64,7 +64,7 @@ const Home = () => {
   return (
     <div className="min-h-screen pb-12">
       {/* Hero Section */}
-      <div className="relative h-[60vh] bg-gradient-to-b from-primary-dark to-primary overflow-hidden">
+      <div className="relative h-[42vh] md:h-[60vh] bg-gradient-to-b from-primary-dark to-primary overflow-hidden">
         {trendingMovies[0] && (
           <>
             <div 

@@ -32,15 +32,27 @@ class TMDBService {
       url.searchParams.append(key, value);
     });
 
+    // Timeout 10s: senza, offline o TMDB irraggiungibile la fetch resta appesa
+    // per 30-60s+ (default browser) e l'utente non ha nessun feedback.
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), 10000);
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, { signal: controller.signal });
       if (!response.ok) {
         throw new Error(`TMDB API Error: ${response.status}`);
       }
       return await response.json();
     } catch (error) {
+      if (error.name === 'AbortError') {
+        throw new Error('Timeout: TMDB non risponde (10s)');
+      }
+      if (error instanceof TypeError) {
+        throw new Error('Rete non raggiungibile: controlla la connessione');
+      }
       console.error('TMDB Fetch Error:', error);
       throw error;
+    } finally {
+      clearTimeout(t);
     }
   }
 

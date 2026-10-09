@@ -99,15 +99,20 @@ class VixSrcService {
 
   // Get VixSrc Catalog
   async getCatalog(type = 'movie', lang = 'it') {
+    const controller = new AbortController();
+    const t = setTimeout(() => controller.abort(), 10000);
     try {
-      const response = await fetch(`${VIXSRC_BASE_URL}/api/list/${type}?lang=${lang}`);
+      const response = await fetch(`${VIXSRC_BASE_URL}/api/list/${type}?lang=${lang}`, { signal: controller.signal });
       if (!response.ok) {
         throw new Error(`VixSrc API Error: ${response.status}`);
       }
       return await response.json();
     } catch (error) {
+      if (error.name === 'AbortError') throw new Error('Timeout: VixSrc non risponde (10s)');
       console.error('VixSrc Catalog Error:', error);
       throw error;
+    } finally {
+      clearTimeout(t);
     }
   }
 

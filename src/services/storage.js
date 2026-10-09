@@ -77,18 +77,30 @@ class StorageService {
 
   // Continue Watching
   getContinueWatching() {
-    return this.get(this.CONTINUE_WATCHING_KEY) || [];
+    const raw = this.get(this.CONTINUE_WATCHING_KEY) || [];
+    // migrazione: le vecchie voci per-episodio (bug poster duplicati) vengono deduplicate
+    // per (id, media_type) — resta l'ultima (l'array è ordinato per aggiornamento recente)
+    const seen = new Set();
+    const deduped = [];
+    for (let i = raw.length - 1; i >= 0; i--) {
+      const k = `${raw[i].id}|${raw[i].media_type}`;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      deduped.unshift(raw[i]);
+    }
+    // ripulisci subito il localStorage se la dedupe ha rimosso voci
+    if (deduped.length !== raw.length) this.set(this.CONTINUE_WATCHING_KEY, deduped);
+    return deduped;
   }
 
   addContinueWatching(item) {
     const continueWatching = this.getContinueWatching();
     
-    // Remove existing entry for this item
+    // UNA voce per contenuto (id + media_type): le serie NON accumulano un poster
+    // per ogni episodio visto (bug dei 4 poster Reacher identici) — resta solo
+    // l'episodio più recente.
     const filtered = continueWatching.filter(cw => 
-      !(cw.id === item.id && 
-        cw.media_type === item.media_type &&
-        cw.season === item.season &&
-        cw.episode === item.episode)
+      !(String(cw.id) === String(item.id) && cw.media_type === item.media_type)
     );
     
     // Add to beginning
@@ -105,11 +117,10 @@ class StorageService {
 
   removeContinueWatching(id, mediaType, season, episode) {
     const continueWatching = this.getContinueWatching();
+    // un tap = rimuove TUTTE le voci della serie (incluse le vecchie per-episodio
+    // lasciate dal bug dei poster duplicati)
     const filtered = continueWatching.filter(cw => 
-      !(cw.id === id && 
-        cw.media_type === mediaType &&
-        cw.season === season &&
-        cw.episode === episode)
+      !(String(cw.id) === String(id) && cw.media_type === mediaType)
     );
     this.set(this.CONTINUE_WATCHING_KEY, filtered);
     return filtered;
@@ -117,26 +128,36 @@ class StorageService {
 
   updateProgress(id, mediaType, progress, season, episode) {
     const continueWatching = this.getContinueWatching();
+    // la voce è UNICA per contenuto: trova quella della serie a prescindere da S/E
     const index = continueWatching.findIndex(cw => 
-      cw.id === id && 
-      cw.media_type === mediaType &&
-      cw.season === season &&
-      cw.episode === episode
+      String(cw.id) === String(id) && 
+      cw.media_type === mediaType
     );
     
     if (index !== -1) {
       continueWatching[index].progress = progress;
+      continueWatching[index].season = season ?? continueWatching[index].season;
+      continueWatching[index].episode = episode ?? continueWatching[index].episode;
       continueWatching[index].updatedAt = new Date().toISOString();
       this.set(this.CONTINUE_WATCHING_KEY, continueWatching);
+    } else {
+      // nessuna voce: creala (il primo timeupdate arriva prima del play)
+      this.addContinueWatching({ id, media_type: mediaType, season, episode, progress });
     }
   }
 
   // Settings
   getSettings() {
-    // merge con i default: i vecchi settings salvati senza autoRotate la ereditano (false)
-    const merged = { ...this.getDefaultSettings(), ...(this.get(this.SETTINGS_KEY) || {}) };
-    if (!this.get(this.SETTINGS_KEY)) {
-      // primo avvio: persisti subito i default così ogni chiave è esplicita
+    // merge con i default: i vecchi settings salvati senza autoRotate la ereditano (true)
+    const saved = this.get(this.SETTINGS_KEY) || {};
+    // migrazione una-tantum: il VECCHIO default era autoRotate:false (baked al primo avvio,
+    // prima che esistesse il toggle) — chi non l'ha mai voluto false esplicitamente rieredita true
+    if (saved.autoRotate === false && !this.get('vixsrc.autorotate.user_set')) {
+      delete saved.autoRotate;
+    }
+    const merged = { ...this.getDefaultSettings(), ...saved };
+    if (!this.get(this.SETTINGS_KEY) || JSON.stringify(this.get(this.SETTINGS_KEY)) !== JSON.stringify(merged)) {
+      // primo avvio o migrazione: persisti il merged così ogni chiave è esplicita
       this.set(this.SETTINGS_KEY, merged);
     }
     return merged;
@@ -149,7 +170,7 @@ class StorageService {
       quality: 'auto',
       subtitles: true,
       theme: 'dark',
-      autoRotate: false,
+      autoRotate: true,
       accentColor: '#ff3848'
     };
   }

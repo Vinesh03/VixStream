@@ -81,7 +81,7 @@ const MediaCard = ({
           }}
         />
         
-        {/* Overlay on hover/focus */}
+        {/* Overlay solo su hover/focus (desktop): su mobile il tap sulla card apre i dettagli */}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity duration-300">
           <div className="absolute bottom-0 left-0 right-0 p-4">
             <div className="flex items-center justify-between mb-2">
@@ -102,9 +102,9 @@ const MediaCard = ({
             
             <button
               onClick={handlePlay}
-              className="w-full btn-primary flex items-center justify-center gap-2"
+              className="w-full btn-primary flex items-center justify-center gap-2 py-2 md:py-2.5 text-sm md:text-base"
             >
-              <Play className="w-5 h-5" />
+              <Play className="w-4 h-4 md:w-5 md:h-5" />
               Riproduci
             </button>
           </div>

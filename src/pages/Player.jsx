@@ -3,34 +3,29 @@ import { useParams, useNavigate } from 'react-router-dom';
 import tmdbService from '../services/tmdb';
 import VideoPlayer from '../components/VideoPlayer/VideoPlayer';
 import Loading from '../components/Common/Loading';
+import useStore from '../store/useStore';
 
 const Player = () => {
   const { mediaType, id, season, episode } = useParams();
   const navigate = useNavigate();
-  const [title, setTitle] = useState('');
+  const settings = useStore((s) => s.settings);
+  const [meta, setMeta] = useState(null); // UN solo fetch: titolo + poster + backdrop
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadTitle();
+    loadMeta();
   }, [id, mediaType, season, episode]);
 
-  const loadTitle = async () => {
+  const loadMeta = async () => {
     try {
       setLoading(true);
       const details = mediaType === 'movie'
         ? await tmdbService.getMovieDetails(id)
         : await tmdbService.getTVShowDetails(id);
-      
-      let displayTitle = details.title || details.name;
-      
-      if (mediaType === 'tv' && season && episode) {
-        displayTitle += ` - S${season}E${episode}`;
-      }
-      
-      setTitle(displayTitle);
+      setMeta(details);
     } catch (error) {
-      console.error('Error loading title:', error);
-      setTitle('Riproduzione');
+      console.error('Error loading details:', error);
+      setMeta(null);
     } finally {
       setLoading(false);
     }
@@ -44,15 +39,22 @@ const Player = () => {
     return <Loading fullScreen text="Preparazione player..." />;
   }
 
+  let displayTitle = meta?.title || meta?.name || 'Riproduzione';
+  if (mediaType === 'tv' && season && episode) {
+    displayTitle += ` - S${season}E${episode}`;
+  }
+
   return (
     <VideoPlayer
       tmdbId={id}
       mediaType={mediaType}
       season={season ? parseInt(season) : null}
       episode={episode ? parseInt(episode) : null}
-      title={title}
+      title={displayTitle}
+      posterPath={meta?.poster_path || null}
+      backdropPath={meta?.backdrop_path || null}
       onClose={handleClose}
-      autoPlay={true}
+      autoPlay={settings.autoplay} // dal toggle nelle Impostazioni (prima fisso true)
     />
   );
 };

@@ -4,6 +4,7 @@ import { Settings as SettingsIcon, Key, Trash2, Save, RefreshCw, Heart, Info } f
 import tmdbService from '../services/tmdb';
 import useStore from '../store/useStore';
 import { THEMES, applyTheme } from '../services/themes';
+import { applyRotationSetting } from '../services/orientation';
 import { Capacitor } from '@capacitor/core';
 import { Palette, Droplet, Pipette } from 'lucide-react';
 
@@ -214,6 +215,26 @@ const Settings = () => {
           <h2 className="text-xl font-semibold text-white mb-4">Riproduzione</h2>
           
           <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white font-medium">Rotazione automatica</p>
+                <p className="text-sm text-gray-400">Lo schermo segue il sensore (OFF = bloccato in verticale)</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={settings.autoRotate}
+                  onChange={(e) => {
+                    localStorage.setItem('vixsrc.autorotate.user_set', 'true');
+                    updateSettings({ autoRotate: e.target.checked });
+                    applyRotationSetting(e.target.checked);
+                  }}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-accent rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
+              </label>
+            </div>
+
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-white font-medium">Autoplay</p>

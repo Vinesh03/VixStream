@@ -33,7 +33,7 @@ const MediaGrid = ({
           <MediaCard
             item={item}
             mediaType={mediaTypeOverride ? (item.media_type || mediaType) : mediaType}
-            autoFocus={index === 0}
+            autoFocus={index === 0 && (window.innerWidth >= 1024 || /\b(tv|smarttv|googletv|bravia|aft[a-z]|shield|chromecast)\b/i.test(navigator.userAgent || ''))}
           />
         </div>
       ))}

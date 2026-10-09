@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { X, Maximize2, Minimize2, ExternalLink, AlertTriangle } from 'lucide-react';
 import vixsrcService from '../../services/vixsrc';
+import { Capacitor } from '@capacitor/core';
+import { ScreenOrientation } from '@capacitor/screen-orientation';
+import { applyRotationSetting } from '../../services/orientation';
 import tmdbService from '../../services/tmdb';
 import useStore from '../../store/useStore';
 
@@ -11,6 +14,8 @@ const VideoPlayer = ({
   episode = null,
   onClose,
   title = '',
+  posterPath = null,
+  backdropPath = null,
   autoPlay = true
 }) => {
   const iframeRef = useRef(null);
@@ -19,10 +24,11 @@ const VideoPlayer = ({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [showExternalHint, setShowExternalHint] = useState(true);
+  const [showTopBar, setShowTopBar] = useState(true);
+  const hideTimer = useRef(null);
   const [streamUrl, setStreamUrl] = useState(null);
   const [streamError, setStreamError] = useState(null);
   const [streamDebug, setStreamDebug] = useState(null);
-  const detailsRef = useRef(null);
   
   const { 
     addContinueWatching, 
@@ -31,17 +37,7 @@ const VideoPlayer = ({
     settings 
   } = useStore();
 
-  // Carica i dettagli TMDB (per il poster in "continua a guardare")
-  useEffect(() => {
-    let cancelled = false;
-    const fetchDetails = mediaType === 'movie'
-      ? tmdbService.getMovieDetails(tmdbId)
-      : tmdbService.getTVShowDetails(tmdbId);
-    fetchDetails
-      .then(d => { if (!cancelled) detailsRef.current = d; })
-      .catch(() => {});
-    return () => { cancelled = true; };
-  }, [tmdbId, mediaType]);
+  // Dettagli TMDB arrivano come props da Player.jsx (UN solo fetch condiviso)
 
   useEffect(() => {
     let lastSaved = 0;
@@ -60,6 +56,7 @@ const VideoPlayer = ({
       },
       onPlay: (time, dur) => {
         setShowExternalHint(false);
+        bumpTopBar(); // barra visibile 3.5s poi auto-hide
         // Add to continue watching when playback starts (con poster per la card)
         addContinueWatching({
           id: tmdbId,
@@ -67,12 +64,15 @@ const VideoPlayer = ({
           season,
           episode,
           title,
-          poster_path: detailsRef.current?.poster_path,
-          backdrop_path: detailsRef.current?.backdrop_path,
+          poster_path: posterPath,
+          backdrop_path: backdropPath,
           progress: dur > 0 ? (time / dur) * 100 : 0,
           currentTime: time,
           duration: dur
         });
+      },
+      onPause: () => {
+        keepTopBar(); // in pausa la barra resta
       },
       onEnded: () => {
         // Add to watch history when video ends
@@ -96,9 +96,12 @@ const VideoPlayer = ({
     setStreamUrl(null);
     setStreamError(null);
 
+    // NB: i default PRIMA, i valori espliciti DOPO — lo spread inverso cancellava
+    // autoplay (getDefaultOptions ha autoplay: false e sovrascriveva autoPlay)
     const opts = {
+      ...vixsrcService.getDefaultOptions(),
       autoplay: autoPlay,
-      ...vixsrcService.getDefaultOptions()
+      lang: settings.language || 'it', // la lingua scelta nelle Impostazioni
     };
 
     vixsrcService.getStreamUrl(mediaType, tmdbId, season, episode, opts)
@@ -128,6 +131,48 @@ const VideoPlayer = ({
     return () => { cancelled = true; };
   }, [tmdbId, mediaType, season, episode]);
 
+  // All'unmount (chiusura player): sblocca l'orientamento e ripristina l'impostazione
+  // dell'app — chiudendo mentre è bloccato landscape, il telefono tornerebbe altrimenti
+  // a restare in orizzontale anche fuori dal player.
+  useEffect(() => {
+    return () => {
+      if (!Capacitor.isNativePlatform?.()) return;
+      try {
+        ScreenOrientation.unlock().then(() => {
+          const s = JSON.parse(localStorage.getItem('vixsrc_settings') || '{}');
+          applyRotationSetting(s.autoRotate);
+        }).catch(() => {});
+      } catch { /* unlock */ }
+    };
+  }, []);
+
+  // ===== Auto-hide barra superiore (come un player normale) =====
+  // Al play: visibile 3.5s poi sparisce. In pausa: torna. Tap sulla striscia in alto
+  // (i tap sull'iframe non bubblano al documento: serve una zona nostra) la richiama.
+  const bumpTopBar = () => {
+    setShowTopBar(true);
+    clearTimeout(hideTimer.current);
+    hideTimer.current = setTimeout(() => setShowTopBar(false), 3500);
+  };
+
+  const keepTopBar = () => {
+    clearTimeout(hideTimer.current);
+    setShowTopBar(true);
+  };
+
+  useEffect(() => () => clearTimeout(hideTimer.current), []);
+
+  // Tap sul VIDEO (iframe): i tap su un iframe cross-origin non arrivano all'app, ma il
+  // focus passa all'iframe → il parent riceve 'blur'. È il segnale standard per rilevare
+  // il tap sul player: con la barra nascosta, tocchi dove vuoi del video e la barra torna.
+  useEffect(() => {
+    const onBlur = () => {
+      if (!showTopBar) bumpTopBar();
+    };
+    window.addEventListener('blur', onBlur);
+    return () => window.removeEventListener('blur', onBlur);
+  }, [showTopBar]);
+
   // Fullscreen handling
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -141,10 +186,35 @@ const VideoPlayer = ({
   }, []);
 
   const toggleFullscreen = async () => {
-    if (!document.fullscreenElement) {
-      await containerRef.current?.requestFullscreen();
-    } else {
-      await document.exitFullscreen();
+    // UN solo full screen (quello dell'app). Su Android il WebView non supporta il
+    // fullscreen nativo (né per l'iframe né per i div): l'app È già a tutto schermo
+    // (fixed inset-0), quindi il bottone fa il lock/unlock LANDSCAPE via plugin
+    // nativo ScreenOrientation (l'API web window.screen.orientation.lock rifiuta il
+    // lock fuori dal fullscreen: era quella la causa del bottone morto).
+    const isNative = Capacitor.isNativePlatform?.();
+    try {
+      if (isNative) {
+        if (!isFullscreen) {
+          await ScreenOrientation.lock({ orientation: 'landscape' });
+          setIsFullscreen(true);
+        } else {
+          await ScreenOrientation.unlock();
+          setIsFullscreen(false);
+          // ripristina l'impostazione di rotazione dell'app (portrait se autoRotate OFF)
+          const s = JSON.parse(localStorage.getItem('vixsrc_settings') || '{}');
+          applyRotationSetting(s.autoRotate);
+        }
+      } else {
+        if (!document.fullscreenElement) {
+          await containerRef.current?.requestFullscreen();
+          setIsFullscreen(true);
+        } else {
+          await document.exitFullscreen();
+          setIsFullscreen(false);
+        }
+      }
+    } catch (e) {
+      console.warn('Fullscreen:', e);
     }
   };
 
@@ -155,8 +225,16 @@ const VideoPlayer = ({
       ref={containerRef}
       className="fixed inset-0 z-50 bg-black"
     >
-      {/* Player Controls Overlay */}
-      <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/80 to-transparent p-4">
+      {/* Striscia per richiamare la barra quando nascosta (sotto la barra, sempre attiva) */}
+      <button
+        className="absolute top-0 left-0 right-0 h-14 z-[5] bg-transparent cursor-default"
+        aria-label="Mostra controlli player"
+        onClick={bumpTopBar}
+        onMouseEnter={() => setShowTopBar(true)}
+      />
+
+      {/* Player Controls Overlay — auto-hide: sparisce dopo 3.5s di play */}
+      <div className={`absolute top-0 left-0 right-0 z-10 bg-gradient-to-b from-black/80 to-transparent p-4 transition-opacity duration-300 ${showTopBar ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold text-white truncate max-w-md">
             {title}
@@ -239,8 +317,7 @@ const VideoPlayer = ({
         ref={iframeRef}
         src={streamUrl}
         className="w-full h-full border-0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-        allowFullScreen
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         title={`Player - ${title}`}
       />
       )}
@@ -267,8 +344,8 @@ const VideoPlayer = ({
         </div>
       )}
 
-      {/* Tempo rimanente discreto (la timeline vera è quella del player VixSrc) */}
-      {duration > 0 && (
+      {/* Tempo rimanente discreto — visibile solo con la barra (copre i controlli VixSrc) */}
+      {duration > 0 && showTopBar && (
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
           <div className="bg-black/60 backdrop-blur rounded-full px-4 py-1.5">
             <span className="text-xs font-mono text-white/90">
