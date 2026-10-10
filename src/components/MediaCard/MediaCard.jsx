@@ -1,8 +1,9 @@
-import React, { useRef, useEffect } from 'react';
-import { Star, Heart, Play } from 'lucide-react';
+import React, { useRef, useEffect, useState } from 'react';
+import { Star, Heart, Play, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import tmdbService from '../../services/tmdb';
 import useStore from '../../store/useStore';
+import { useDeviceType } from '../../hooks';
 
 const MediaCard = ({
   item,
@@ -15,6 +16,8 @@ const MediaCard = ({
   const cardRef = useRef(null);
   const { continueWatching } = useStore();
   const { isFavorite, addFavorite, removeFavorite } = useStore();
+  const { isTouch } = useDeviceType();
+  const [isOverlayOpen, setIsOverlayOpen] = useState(false);
   
   const title = item.title || item.name;
   const releaseDate = item.release_date || item.first_air_date;
@@ -31,6 +34,15 @@ const MediaCard = ({
   }, [autoFocus]);
 
   const handleClick = () => {
+    // Su touch (mobile + tablet): il primo tap apre l'overlay Play/Fav, il secondo naviga.
+    // Desktop: hover mostra l'overlay, click naviga subito.
+    if (isTouch) {
+      if (!isOverlayOpen) {
+        setIsOverlayOpen(true);
+        return;
+      }
+      setIsOverlayOpen(false);
+    }
     navigate(`/details/${mediaType}/${item.id}`);
   };
 
@@ -81,9 +93,18 @@ const MediaCard = ({
           }}
         />
         
-        {/* Overlay solo su hover/focus (desktop): su mobile il tap sulla card apre i dettagli */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity duration-300">
+        {/* Overlay: desktop hover/focus, touch (mobile+tablet) al tap sulla card (isOverlayOpen) */}
+        <div className={`absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent transition-opacity duration-300 ${isTouch ? (isOverlayOpen ? 'opacity-100' : 'opacity-0 pointer-events-none') : 'opacity-0 group-hover:opacity-100 group-focus:opacity-100'}`}>
           <div className="absolute bottom-0 left-0 right-0 p-4">
+            {isOverlayOpen && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setIsOverlayOpen(false); }}
+                className="absolute top-3 right-3 p-1.5 rounded-full bg-black/60 hover:bg-black/80 transition-colors"
+                aria-label="Chiudi"
+              >
+                <X className="w-4 h-4 text-white" />
+              </button>
+            )}
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-1 text-yellow-400">
                 <Star className="w-4 h-4 fill-current" />
