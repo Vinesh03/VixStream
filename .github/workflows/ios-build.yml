@@ -2,13 +2,6 @@ name: iOS Build
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'src/**'
-      - 'package.json'
-      - 'capacitor.config.json'
-      - '.github/workflows/ios-build.yml'
 
 jobs:
   build-ios:
