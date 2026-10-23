@@ -9,52 +9,79 @@ const Player = () => {
   const { mediaType, id, season, episode } = useParams();
   const navigate = useNavigate();
   const settings = useStore((s) => s.settings);
-  const [meta, setMeta] = useState(null); // UN solo fetch: titolo + poster + backdrop
+  const [meta, setMeta] = useState(null);
+  const [seasonEpisodes, setSeasonEpisodes] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadMeta();
-  }, [id, mediaType, season, episode]);
+  const curSeason = season ? parseInt(season, 10) : null;
+  const curEpisode = episode ? parseInt(episode, 10) : null;
 
-  const loadMeta = async () => {
-    try {
-      setLoading(true);
-      const details = mediaType === 'movie'
-        ? await tmdbService.getMovieDetails(id)
-        : await tmdbService.getTVShowDetails(id);
-      setMeta(details);
-    } catch (error) {
-      console.error('Error loading details:', error);
-      setMeta(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    let live = true;
+    (async () => {
+      try {
+        setLoading(true);
+        const details = mediaType === 'movie'
+          ? await tmdbService.getMovieDetails(id)
+          : await tmdbService.getTVShowDetails(id);
+        if (!live) return;
+        setMeta(details);
+
+        if (mediaType === 'tv' && curSeason) {
+          const sData = await tmdbService.getTVSeasonDetails(id, curSeason);
+          if (live) setSeasonEpisodes(sData.episodes || []);
+        } else {
+          if (live) setSeasonEpisodes([]);
+        }
+      } catch (error) {
+        console.error('Error loading details:', error);
+      } finally {
+        if (live) setLoading(false);
+      }
+    })();
+    return () => { live = false; };
+  }, [id, mediaType, curSeason]);
 
   const handleClose = () => {
     navigate(-1);
   };
 
-  if (loading) {
+  const handleSelectEpisode = (epNum, sNum = curSeason) => {
+    navigate(`/player/tv/${id}/${sNum}/${epNum}`);
+  };
+
+  const nextEpObj = seasonEpisodes.find((e) => e.episode_number === curEpisode + 1);
+
+  const handleNextEpisode = () => {
+    if (nextEpObj) {
+      handleSelectEpisode(nextEpObj.episode_number);
+    }
+  };
+
+  if (loading && !meta) {
     return <Loading fullScreen text="Preparazione player..." />;
   }
 
   let displayTitle = meta?.title || meta?.name || 'Riproduzione';
-  if (mediaType === 'tv' && season && episode) {
-    displayTitle += ` - S${season}E${episode}`;
+  if (mediaType === 'tv' && curSeason && curEpisode) {
+    displayTitle += ` - S${curSeason}E${curEpisode}`;
   }
 
   return (
     <VideoPlayer
       tmdbId={id}
       mediaType={mediaType}
-      season={season ? parseInt(season) : null}
-      episode={episode ? parseInt(episode) : null}
+      season={curSeason}
+      episode={curEpisode}
       title={displayTitle}
       posterPath={meta?.poster_path || null}
       backdropPath={meta?.backdrop_path || null}
       onClose={handleClose}
-      autoPlay={settings.autoplay} // dal toggle nelle Impostazioni (prima fisso true)
+      autoPlay={settings.autoplay}
+      episodes={seasonEpisodes}
+      hasNextEpisode={Boolean(nextEpObj)}
+      onNextEpisode={nextEpObj ? handleNextEpisode : null}
+      onSelectEpisode={handleSelectEpisode}
     />
   );
 };

@@ -226,3 +226,12 @@ select.input-field optgroup {
   background-color: var(--c-bg-light);
   color: #fff;
 }
+
+/* Hide scrollbar for horizontal carousels */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

@@ -1,9 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Star, Heart, Play, X } from 'lucide-react';
+import { Star, Heart, Play } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import tmdbService from '../../services/tmdb';
 import useStore from '../../store/useStore';
-import { useDeviceType } from '../../hooks';
 
 const MediaCard = ({
   item,
@@ -16,53 +15,43 @@ const MediaCard = ({
   const cardRef = useRef(null);
   const { continueWatching } = useStore();
   const { isFavorite, addFavorite, removeFavorite } = useStore();
-  const { isTouch } = useDeviceType();
-  const [isOverlayOpen, setIsOverlayOpen] = useState(false);
-  
+  const [imgLoaded, setImgLoaded] = useState(false);
+
+  const effectiveMediaType = item.media_type || mediaType || 'movie';
   const title = item.title || item.name;
   const releaseDate = item.release_date || item.first_air_date;
   const year = releaseDate ? new Date(releaseDate).getFullYear() : '';
-  const rating = item.vote_average ? item.vote_average.toFixed(1) : 'N/A';
+  const rating = item.vote_average ? item.vote_average.toFixed(1) : null;
   const posterUrl = tmdbService.getImageUrl(item.poster_path, 'w342');
-  const isFav = isFavorite(item.id, mediaType);
+  const isFav = isFavorite(item.id, effectiveMediaType);
 
   useEffect(() => {
     if (autoFocus && cardRef.current) {
-      // preventScroll: evita che la pagina salti fino alla card all'avvio
       cardRef.current.focus({ preventScroll: true });
     }
   }, [autoFocus]);
 
   const handleClick = () => {
-    // Su touch (mobile + tablet): il primo tap apre l'overlay Play/Fav, il secondo naviga.
-    // Desktop: hover mostra l'overlay, click naviga subito.
-    if (isTouch) {
-      if (!isOverlayOpen) {
-        setIsOverlayOpen(true);
-        return;
-      }
-      setIsOverlayOpen(false);
-    }
-    navigate(`/details/${mediaType}/${item.id}`);
+    navigate(`/details/${effectiveMediaType}/${item.id}`);
   };
 
   const handleFavorite = (e) => {
+    e.preventDefault();
     e.stopPropagation();
     if (isFav) {
-      removeFavorite(item.id, mediaType);
+      removeFavorite(item.id, effectiveMediaType);
     } else {
       addFavorite({
         ...item,
-        media_type: mediaType
+        media_type: effectiveMediaType
       });
     }
   };
 
   const handlePlay = (e) => {
+    e.preventDefault();
     e.stopPropagation();
-    // Serie TV: riprendi da stagione/episodio salvati, altrimenti S1E1.
-    // (l'URL del player richiede sempre /:season/:episode per le serie)
-    if (mediaType === 'tv') {
+    if (effectiveMediaType === 'tv') {
       const saved = continueWatching.find(
         (w) => String(w.id) === String(item.id) && w.media_type === 'tv'
       );
@@ -71,7 +60,7 @@ const MediaCard = ({
       navigate(`/player/tv/${item.id}/${season}/${episode}`);
       return;
     }
-    navigate(`/player/${mediaType}/${item.id}`);
+    navigate(`/player/${effectiveMediaType}/${item.id}`);
   };
 
   return (
@@ -80,68 +69,69 @@ const MediaCard = ({
       tabIndex={0}
       onClick={handleClick}
       onFocus={onFocus}
-      className={`card card-interactive tv-focusable group cursor-pointer ${className}`}
+      className={`card card-interactive tv-focusable group cursor-pointer relative overflow-hidden flex flex-col ${className}`}
     >
-      <div className="relative aspect-[2/3] bg-secondary">
+      <div className="relative aspect-[2/3] bg-secondary overflow-hidden">
+        {!imgLoaded && <div className="absolute inset-0 skeleton rounded-none" />}
         <img
           src={posterUrl}
           alt={title}
-          className="w-full h-full object-cover"
-          loading="lazy"
+          onLoad={() => setImgLoaded(true)}
           onError={(e) => {
             e.target.src = '/placeholder.svg';
+            setImgLoaded(true);
           }}
+          className={`w-full h-full object-cover transition-all duration-300 group-hover:scale-105 ${
+            imgLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
+          loading="lazy"
+          decoding="async"
         />
-        
-        {/* Overlay: desktop hover/focus, touch (mobile+tablet) al tap sulla card (isOverlayOpen) */}
-        <div className={`absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent transition-opacity duration-300 ${isTouch ? (isOverlayOpen ? 'opacity-100' : 'opacity-0 pointer-events-none') : 'opacity-0 group-hover:opacity-100 group-focus:opacity-100'}`}>
-          <div className="absolute bottom-0 left-0 right-0 p-4">
-            {isOverlayOpen && (
-              <button
-                onClick={(e) => { e.stopPropagation(); setIsOverlayOpen(false); }}
-                className="absolute top-3 right-3 p-1.5 rounded-full bg-black/60 hover:bg-black/80 transition-colors"
-                aria-label="Chiudi"
-              >
-                <X className="w-4 h-4 text-white" />
-              </button>
-            )}
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-1 text-yellow-400">
-                <Star className="w-4 h-4 fill-current" />
-                <span className="text-sm font-semibold">{rating}</span>
-              </div>
-              <button
-                onClick={handleFavorite}
-                className="p-2 rounded-full bg-black/60 hover:bg-black/80 transition-colors"
-                aria-label={isFav ? 'Rimuovi dai preferiti' : 'Aggiungi ai preferiti'}
-              >
-                <Heart 
-                  className={`w-5 h-5 ${isFav ? 'fill-red-500 text-red-500' : 'text-white'}`}
-                />
-              </button>
-            </div>
-            
-            <button
-              onClick={handlePlay}
-              className="w-full btn-primary flex items-center justify-center gap-2 py-2 md:py-2.5 text-sm md:text-base"
-            >
-              <Play className="w-4 h-4 md:w-5 md:h-5" />
-              Riproduci
-            </button>
+
+        {rating && rating !== '0.0' && (
+          <div className="absolute top-2 left-2 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/75 border border-white/10 text-yellow-400 text-xs font-semibold shadow-md">
+            <Star className="w-3 h-3 fill-current" />
+            <span>{rating}</span>
           </div>
-        </div>
+        )}
+
+        <button
+          onClick={handleFavorite}
+          className={`absolute top-2 right-2 z-20 p-2 rounded-full transition-all active:scale-90 ${
+            isFav
+              ? 'bg-red-500/90 text-white shadow-lg'
+              : 'bg-black/65 text-white/80 hover:bg-black/90 hover:text-white border border-white/10 opacity-90'
+          }`}
+          aria-label={isFav ? 'Rimuovi dai preferiti' : 'Aggiungi ai preferiti'}
+        >
+          <Heart className={`w-3.5 h-3.5 ${isFav ? 'fill-current' : ''}`} />
+        </button>
+
+        <button
+          onClick={handlePlay}
+          className="absolute bottom-2.5 right-2.5 w-9 h-9 md:w-10 md:h-10 rounded-full bg-accent text-white flex items-center justify-center shadow-lg transition-transform active:scale-90 group-hover:scale-110 z-10"
+          aria-label="Riproduci ora"
+          title="Riproduci ora"
+        >
+          <Play className="w-4 h-4 fill-current ml-0.5" />
+        </button>
+
+        <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
       </div>
 
-      <div className="p-3">
+      <div className="p-2.5 flex-1 flex flex-col justify-between">
         <h3
-          className="font-semibold text-white line-clamp-2 leading-snug mb-1 min-h-[2.6em]"
+          className="font-medium text-white text-[13px] leading-snug line-clamp-2 min-h-[2.4em]"
           title={title}
         >
           {title}
         </h3>
-        <p className="text-sm text-gray-400">
-          {year}
-        </p>
+        <div className="flex items-center justify-between text-[11px] text-gray-400 mt-1">
+          <span>{year || '—'}</span>
+          <span className="uppercase text-[9.5px] tracking-wider px-1.5 py-0.5 rounded bg-white/5 font-mono">
+            {effectiveMediaType === 'tv' ? 'Serie' : 'Film'}
+          </span>
+        </div>
       </div>
     </div>
   );
