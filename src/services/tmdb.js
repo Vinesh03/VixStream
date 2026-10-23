@@ -73,6 +73,23 @@ class TMDBService {
     }
   }
 
+  async getTrailerKey(mediaType, id) {
+    const pick = (list = []) =>
+      list.find((v) => v.site === 'YouTube' && v.type === 'Trailer') ||
+      list.find((v) => v.site === 'YouTube' && v.type === 'Teaser') ||
+      list.find((v) => v.site === 'YouTube');
+    try {
+      const itRes = await this.fetchFromTMDB(`/${mediaType}/${id}/videos`);
+      const foundIt = pick(itRes.results);
+      if (foundIt?.key) return foundIt.key;
+      const enRes = await this.fetchFromTMDB(`/${mediaType}/${id}/videos`, { language: 'en-US' });
+      const foundEn = pick(enRes.results);
+      return foundEn?.key || null;
+    } catch {
+      return null;
+    }
+  }
+
   getImageUrl(path, size = 'original') {
     if (!path) return '/placeholder.svg';
     return `${IMAGE_BASE_URL}/${size}${path}`;

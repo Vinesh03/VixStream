@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { TrendingUp, Film, Tv, Star, Play, X, Clock, Flame, Film as MovieIcon, Youtube } from 'lucide-react';
+import { TrendingUp, Film, Tv, Star, Play, X, Clock, Flame, Youtube, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import tmdbService from '../services/tmdb';
 import MediaRow from '../components/MediaRow/MediaRow';
 import PullToRefresh from '../components/Common/PullToRefresh';
+import TrailerModal from '../components/Common/TrailerModal';
 import Loading from '../components/Common/Loading';
 import ErrorMessage from '../components/Common/ErrorMessage';
 import useStore from '../store/useStore';
@@ -17,8 +18,10 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [heroIdx, setHeroIdx] = useState(0);
-  const [trailerKey, setTrailerKey] = useState(null);
-  
+  const [trailer, setTrailer] = useState(null);
+  const heroTouchX = useRef(null);
+  const heroTouchY = useRef(null);
+
   const { continueWatching, removeContinueWatching } = useStore();
 
   const handleRemoveCW = (e, item) => {
@@ -56,23 +59,43 @@ const Home = () => {
     loadContent();
   }, [loadContent]);
 
-  // Rotazione automatica Hero ogni 7 secondi se l'utente non ha aperto un trailer
+  const heroCount = Math.min(trendingMovies.length, 6);
+
   useEffect(() => {
-    if (trendingMovies.length <= 1 || trailerKey) return;
+    if (heroCount <= 1 || trailer) return;
     const t = setInterval(() => {
-      setHeroIdx((i) => (i + 1) % Math.min(trendingMovies.length, 5));
+      setHeroIdx((i) => (i + 1) % heroCount);
     }, 7000);
     return () => clearInterval(t);
-  }, [trendingMovies.length, trailerKey]);
+  }, [heroCount, trailer]);
 
-  const openTrailer = async (movie) => {
-    try {
-      const data = await tmdbService.fetchFromTMDB(`/movie/${movie.id}/videos`);
-      const t = (data.results || []).find((v) => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser'));
-      if (t?.key) setTrailerKey(t.key);
-      else alert('Nessun trailer disponibile per questo titolo.');
-    } catch {
-      alert('Impossibile caricare il trailer.');
+  const stepHero = (dir) => {
+    if (heroCount <= 1) return;
+    setHeroIdx((i) => (i + dir + heroCount) % heroCount);
+  };
+
+  const onHeroTouchStart = (e) => {
+    heroTouchX.current = e.touches[0].clientX;
+    heroTouchY.current = e.touches[0].clientY;
+  };
+
+  const onHeroTouchEnd = (e) => {
+    if (heroTouchX.current === null) return;
+    const dx = e.changedTouches[0].clientX - heroTouchX.current;
+    const dy = e.changedTouches[0].clientY - heroTouchY.current;
+    heroTouchX.current = null;
+    heroTouchY.current = null;
+    if (Math.abs(dx) > 42 && Math.abs(dx) > Math.abs(dy)) {
+      stepHero(dx < 0 ? 1 : -1);
+    }
+  };
+
+  const openTrailer = async (item, mediaType = 'movie') => {
+    const key = await tmdbService.getTrailerKey(mediaType, item.id);
+    if (key) {
+      setTrailer({ key, title: `Trailer · ${item.title || item.name || ''}` });
+    } else {
+      alert('Nessun trailer disponibile per questo titolo.');
     }
   };
 
@@ -89,23 +112,47 @@ const Home = () => {
   return (
     <PullToRefresh onRefresh={() => loadContent(true)}>
       <div className="min-h-screen pb-20">
-        {/* Hero Section Rotante */}
+        {/* Hero Section con Swipe Destra/Sinistra */}
         {heroItem && (
-          <div className="relative h-[50vh] md:h-[64vh] overflow-hidden bg-primary">
+          <div
+            className="relative h-[50vh] md:h-[64vh] overflow-hidden bg-primary select-none"
+            onTouchStart={onHeroTouchStart}
+            onTouchEnd={onHeroTouchEnd}
+          >
             <div 
               key={heroItem.id}
-              className="absolute inset-0 bg-cover bg-center transition-all duration-1000 scale-105 animate-fade-in"
+              className="absolute inset-0 bg-cover bg-center transition-all duration-700 scale-105 animate-fade-in"
               style={{
                 backgroundImage: `url(${tmdbService.getImageUrl(heroItem.backdrop_path, 'w780')})`
               }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/60 to-transparent" />
             <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-primary/30 to-transparent" />
-            
+
+            {/* Frecce laterali discrete */}
+            {heroCount > 1 && (
+              <>
+                <button
+                  onClick={() => stepHero(-1)}
+                  className="hidden sm:flex absolute left-3 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/50 hover:bg-black/80 text-white border border-white/10 transition-all active:scale-90"
+                  aria-label="Precedente"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => stepHero(1)}
+                  className="hidden sm:flex absolute right-3 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/50 hover:bg-black/80 text-white border border-white/10 transition-all active:scale-90"
+                  aria-label="Successivo"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </>
+            )}
+
             <div className="relative container mx-auto px-4 h-full flex items-end pb-8 md:pb-12">
               <div className="max-w-xl w-full">
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/20 border border-accent/30 text-accent text-xs font-semibold uppercase tracking-wider mb-2.5">
-                  <Flame className="w-3.5 h-3.5" /> In primo piano #{heroIdx + 1}
+                  <Flame className="w-3.5 h-3.5" /> In primo piano #{heroIdx + 1} · Scorri ⇄
                 </div>
                 <h1 className="text-2xl md:text-4xl font-bold text-white mb-2 leading-tight drop-shadow-md">
                   {heroItem.title || heroItem.name}
@@ -122,9 +169,9 @@ const Home = () => {
                     Guarda ora
                   </Link>
                   <button
-                    onClick={() => openTrailer(heroItem)}
+                    onClick={() => openTrailer(heroItem, 'movie')}
                     className="btn-secondary inline-flex items-center gap-1.5 text-sm px-3.5 py-2.5 active:scale-95 transition-transform text-white/90"
-                    title="Guarda il trailer su YouTube"
+                    title="Guarda il trailer"
                   >
                     <Youtube className="w-4 h-4 text-red-500" />
                     Trailer
@@ -137,10 +184,10 @@ const Home = () => {
                   </button>
                 </div>
 
-                {/* Dot indicator per hero rotante */}
-                {trendingMovies.length > 1 && (
+                {/* Dot indicator */}
+                {heroCount > 1 && (
                   <div className="flex items-center gap-1.5 mt-5">
-                    {trendingMovies.slice(0, 5).map((m, idx) => (
+                    {trendingMovies.slice(0, heroCount).map((m, idx) => (
                       <button
                         key={m.id}
                         onClick={() => setHeroIdx(idx)}
@@ -157,37 +204,15 @@ const Home = () => {
           </div>
         )}
 
-        {/* Modal Trailer YouTube in overlay */}
-        {trailerKey && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 animate-fade-in"
-            onClick={() => setTrailerKey(null)}
-          >
-            <div
-              className="relative w-full max-w-3xl aspect-video bg-black rounded-2xl overflow-hidden border border-white/10 shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                onClick={() => setTrailerKey(null)}
-                className="absolute top-3 right-3 z-10 p-2 rounded-full bg-black/70 hover:bg-black/90 text-white transition-all active:scale-90"
-                aria-label="Chiudi trailer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-              <iframe
-                src={`https://www.youtube-nocookie.com/embed/${trailerKey}?autoplay=1`}
-                title="Trailer"
-                className="w-full h-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            </div>
-          </div>
-        )}
+        {/* Modal Trailer centrato nel viewport via Portal */}
+        <TrailerModal
+          videoKey={trailer?.key}
+          title={trailer?.title}
+          onClose={() => setTrailer(null)}
+        />
 
-        {/* Sezioni a Carosello Orizzontale */}
+        {/* Sezioni a Carosello Orizzontale con Gesture */}
         <div className="space-y-8 mt-2">
-          {/* Continua a guardare */}
           {continueWatching.length > 0 && (
             <MediaRow
               title="Continua a guardare"
@@ -214,7 +239,6 @@ const Home = () => {
             />
           )}
 
-          {/* Al cinema ora */}
           {nowPlaying.length > 0 && (
             <MediaRow
               title="Al cinema ora"
@@ -225,7 +249,6 @@ const Home = () => {
             />
           )}
 
-          {/* Film di tendenza */}
           <MediaRow
             title="Film di tendenza"
             icon={TrendingUp}
@@ -234,7 +257,6 @@ const Home = () => {
             viewAllLink="/movies"
           />
 
-          {/* Serie TV di tendenza */}
           <MediaRow
             title="Serie TV di tendenza"
             icon={Tv}
@@ -243,7 +265,6 @@ const Home = () => {
             viewAllLink="/tv-shows"
           />
 
-          {/* Film più votati */}
           <MediaRow
             title="I più votati di sempre"
             icon={Film}

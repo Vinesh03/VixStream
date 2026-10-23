@@ -6,6 +6,8 @@ import useStore from '../store/useStore';
 import Loading from '../components/Common/Loading';
 import ErrorMessage from '../components/Common/ErrorMessage';
 import MediaGrid from '../components/MediaGrid/MediaGrid';
+import TrailerModal from '../components/Common/TrailerModal';
+import { Youtube } from 'lucide-react';
 
 function formatRuntime(mins) {
   if (!mins) return null;
@@ -25,6 +27,7 @@ const Details = () => {
   const [showEpisodes, setShowEpisodes] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [trailer, setTrailer] = useState(null);
 
   const { isFavorite, addFavorite, removeFavorite, continueWatching, removeContinueWatching } = useStore();
   const isFav = details ? isFavorite(details.id, mediaType) : false;
@@ -105,6 +108,15 @@ const Details = () => {
       return `Riprendi S${watchEntry.season}E${watchEntry.episode}`;
     }
     return 'Riproduci S1E1';
+  };
+
+  const openTrailer = async () => {
+    const key = await tmdbService.getTrailerKey(mediaType, id);
+    if (key) {
+      setTrailer({ key, title: `Trailer · ${details.title || details.name || ''}` });
+    } else {
+      alert('Nessun trailer disponibile per questo titolo.');
+    }
   };
 
   const handleToggleFavorite = () => {
@@ -210,6 +222,14 @@ const Details = () => {
                 >
                   <Play className="w-4 h-4 fill-current" />
                   {getPlayLabel()}
+                </button>
+                <button
+                  onClick={openTrailer}
+                  className="btn-secondary flex items-center gap-1.5 text-sm px-4 py-2.5 active:scale-95 transition-transform"
+                  title="Guarda il trailer"
+                >
+                  <Youtube className="w-4 h-4 text-red-500" />
+                  Trailer
                 </button>
 
                 {mediaType === 'tv' && seasons.length > 0 && (
@@ -366,6 +386,7 @@ const Details = () => {
           </section>
         )}
       </div>
+      <TrailerModal videoKey={trailer?.key} title={trailer?.title} onClose={() => setTrailer(null)} />
     </div>
   );
 };
