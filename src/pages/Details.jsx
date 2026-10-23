@@ -6,7 +6,8 @@ import useStore from '../store/useStore';
 import Loading from '../components/Common/Loading';
 import ErrorMessage from '../components/Common/ErrorMessage';
 import MediaGrid from '../components/MediaGrid/MediaGrid';
-import TrailerModal from '../components/Common/TrailerModal';
+import TrailerModal, { launchYoutubeExternal } from '../components/Common/TrailerModal';
+import { Capacitor } from '@capacitor/core';
 import { Youtube } from 'lucide-react';
 
 function formatRuntime(mins) {
@@ -112,10 +113,14 @@ const Details = () => {
 
   const openTrailer = async () => {
     const key = await tmdbService.getTrailerKey(mediaType, id);
-    if (key) {
-      setTrailer({ key, title: `Trailer · ${details.title || details.name || ''}` });
-    } else {
+    if (!key) {
       alert('Nessun trailer disponibile per questo titolo.');
+      return;
+    }
+    if (Capacitor.isNativePlatform?.()) {
+      launchYoutubeExternal(key);
+    } else {
+      setTrailer({ key, title: `Trailer · ${details.title || details.name || ''}` });
     }
   };
 

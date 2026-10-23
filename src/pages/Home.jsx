@@ -4,7 +4,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import tmdbService from '../services/tmdb';
 import MediaRow from '../components/MediaRow/MediaRow';
 import PullToRefresh from '../components/Common/PullToRefresh';
-import TrailerModal from '../components/Common/TrailerModal';
+import TrailerModal, { launchYoutubeExternal } from '../components/Common/TrailerModal';
+import { Capacitor } from '@capacitor/core';
 import Loading from '../components/Common/Loading';
 import ErrorMessage from '../components/Common/ErrorMessage';
 import useStore from '../store/useStore';
@@ -92,10 +93,14 @@ const Home = () => {
 
   const openTrailer = async (item, mediaType = 'movie') => {
     const key = await tmdbService.getTrailerKey(mediaType, item.id);
-    if (key) {
-      setTrailer({ key, title: `Trailer · ${item.title || item.name || ''}` });
-    } else {
+    if (!key) {
       alert('Nessun trailer disponibile per questo titolo.');
+      return;
+    }
+    if (Capacitor.isNativePlatform?.()) {
+      launchYoutubeExternal(key);
+    } else {
+      setTrailer({ key, title: `Trailer · ${item.title || item.name || ''}` });
     }
   };
 
